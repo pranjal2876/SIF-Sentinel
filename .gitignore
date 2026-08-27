@@ -67,3 +67,6 @@ temp/
 !backend/data/models/
 !backend/data/models/threew_rf_model.joblib
 !backend/data/models/threew_split_metadata.json
+
+# Local raw datasets
+raw/
