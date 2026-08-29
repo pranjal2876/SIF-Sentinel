@@ -24,6 +24,19 @@ interface ProfileData {
   preview: Record<string, any>[];
 }
 
+function formatErrorMessage(err: any): string {
+  if (!err) return "An unexpected error occurred.";
+  let msg = typeof err === "string" ? err : err.message || JSON.stringify(err);
+  try {
+    const jsonMatch = msg.match(/\{.*?\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.detail) return parsed.detail;
+    }
+  } catch {}
+  return msg.replace(/^API error \d+:\s*/, "");
+}
+
 export default function DatasetUploadPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -49,7 +62,7 @@ export default function DatasetUploadPage() {
       setProfile(p);
       setMapping(p.candidate_mappings || {});
     } catch (err: any) {
-      setError(err?.message || "Failed to profile uploaded file. Ensure it is a valid CSV or Excel file.");
+      setError(formatErrorMessage(err) || "Failed to profile uploaded file. Ensure it is a valid CSV, Excel, or PDF document.");
     } finally {
       setProfiling(false);
     }
@@ -63,11 +76,12 @@ export default function DatasetUploadPage() {
       const res = await uploadDatasetFile(file, mapping, datasetName, isSynthetic);
       setUploadResult(res);
     } catch (err: any) {
-      setError(err?.message || "Dataset ingestion and NLP processing failed.");
+      setError(formatErrorMessage(err) || "Dataset ingestion and NLP processing failed.");
     } finally {
       setUploading(false);
     }
   }
+
 
   return (
     <>
@@ -82,10 +96,10 @@ export default function DatasetUploadPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="material-symbols-outlined text-amber-500 text-2xl">upload_file</span>
-                <h1 className="text-2xl font-bold text-slate-900">Dataset Ingestion &amp; Profiling</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Dataset & PDF Ingestion</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Upload raw safety records (CSV or XLSX) from any industrial near-miss or unsafe condition log. The pipeline automatically profiles schema, extracts hazards, computes SIF potential, and clusters latent precursor patterns.
+                Upload raw safety records (CSV, XLSX, or PDF incident reports) from any industrial near-miss or unsafe condition log. The pipeline automatically extracts tables and narratives, profiles schema, detects hazards, computes SIF potential, and clusters latent precursor patterns.
               </p>
             </div>
 
@@ -95,7 +109,7 @@ export default function DatasetUploadPage() {
                 <label className="border-2 border-dashed border-slate-300 hover:border-primary rounded-2xl p-12 text-center cursor-pointer flex flex-col items-center justify-center transition-all bg-slate-50/50 group">
                   <input
                     type="file"
-                    accept=".csv, .xlsx, .xls"
+                    accept=".csv, .xlsx, .xls, .pdf"
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files?.[0]) handleFileChange(e.target.files[0]);
@@ -105,10 +119,10 @@ export default function DatasetUploadPage() {
                     <span className="material-symbols-outlined text-3xl">cloud_upload</span>
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mb-1">
-                    {profiling ? "Profiling Dataset Schema..." : "Click or drag CSV / XLSX dataset here"}
+                    {profiling ? "Profiling Dataset Schema..." : "Click or drag CSV / XLSX / PDF dataset here"}
                   </h3>
                   <p className="text-xs text-slate-400 max-w-sm">
-                    Supports any column naming convention. Schema will be profiled and canonical fields inferred automatically.
+                    Supports tabular logs and multi-page PDF incident narratives. Schema will be profiled and canonical fields inferred automatically.
                   </p>
                 </label>
 

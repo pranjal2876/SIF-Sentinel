@@ -8,11 +8,16 @@ import re
 import datetime as dt
 from typing import Dict, Any, List, Optional
 import pandas as pd
+from app.data.importers.pdf_importer import profile_pdf_document, extract_pdf_records
 
 
 def profile_dataset(file_content: bytes, filename: str = "dataset.csv") -> Dict[str, Any]:
-    """Profiles an uploaded CSV or XLSX dataset and detects candidate safety fields."""
+    """Profiles an uploaded CSV, XLSX, or PDF dataset and detects candidate safety fields."""
+    if filename.lower().endswith(".pdf"):
+        return profile_pdf_document(file_content, filename)
+
     is_excel = filename.lower().endswith((".xlsx", ".xls"))
+
 
     try:
         if is_excel:
@@ -143,6 +148,35 @@ def normalize_dataset_records(
     is_synthetic: bool = False
 ) -> List[Dict[str, Any]]:
     """Transforms raw file rows into the canonical SIF Sentinel schema."""
+    if filename.lower().endswith(".pdf"):
+        pdf_res = extract_pdf_records(file_content)
+        records = pdf_res.get("records", [])
+        if not records:
+            raise ValueError(f"Could not extract safety records or readable narrative from PDF '{filename}'.")
+        canonical_records = []
+        now = dt.datetime.utcnow()
+        for r in records:
+            canonical_records.append({
+                "report_date": r.get("report_date") or now,
+                "report_type": r.get("report_type", "NEAR_MISS"),
+                "description": r.get("description", ""),
+                "location": r.get("location") or r.get("site") or "Site Alpha",
+                "site": r.get("site") or r.get("location") or "Site Alpha",
+                "department": r.get("department"),
+                "contractor": r.get("contractor"),
+                "reporter_role": r.get("reporter_role", "PDF Safety Observer"),
+                "severity": r.get("severity", "UNKNOWN"),
+                "potential_severity": r.get("potential_severity"),
+                "source_dataset": source_dataset_name or filename,
+                "is_synthetic": is_synthetic,
+                "raw_source": {
+                    k: (v.isoformat() if isinstance(v, (dt.datetime, dt.date)) else (str(v) if pd.notna(v) else None))
+                    for k, v in r.items()
+                },
+            })
+        return canonical_records
+
+
     is_excel = filename.lower().endswith((".xlsx", ".xls"))
     if is_excel:
         df = pd.read_excel(io.BytesIO(file_content))
@@ -156,6 +190,7 @@ def normalize_dataset_records(
     if not column_mapping:
         profile = profile_dataset(file_content, filename)
         column_mapping = profile["candidate_mappings"]
+
 
     desc_col = column_mapping.get("description")
     if not desc_col or desc_col not in df.columns:
