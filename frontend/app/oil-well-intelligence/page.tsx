@@ -6,6 +6,8 @@ import { DatasetProvenanceBadge } from "@/components/DatasetProvenanceBadge";
 import { ThreeWConfusionMatrix } from "@/components/ThreeWConfusionMatrix";
 import { ThreeWTimeSeriesChart } from "@/components/ThreeWTimeSeriesChart";
 
+import { api } from "@/lib/api";
+
 export default function OilWellIntelligencePage() {
   const [overview, setOverview] = useState<any>(null);
   const [cmData, setCmData] = useState<any>(null);
@@ -19,21 +21,18 @@ export default function OilWellIntelligencePage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [ovRes, cmRes, instRes] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/v1/threew/overview"),
-          fetch("http://127.0.0.1:8000/api/v1/threew/confusion-matrix"),
-          fetch("http://127.0.0.1:8000/api/v1/threew/instances?limit=25"),
+        const [ovRes, cmRes, instList] = await Promise.all([
+          api.threewOverview().catch(() => null),
+          api.threewConfusionMatrix().catch(() => null),
+          api.threewInstances(25).catch(() => []),
         ]);
 
-        if (ovRes.ok) setOverview(await ovRes.json());
-        if (cmRes.ok) setCmData(await cmRes.json());
-        if (instRes.ok) {
-          const instList = await instRes.json();
+        if (ovRes) setOverview(ovRes);
+        if (cmRes) setCmData(cmRes);
+        if (instList && instList.length > 0) {
           setInstances(instList);
-          if (instList.length > 0) {
-            setSelectedInstance(instList[0]);
-            loadInstanceChart(instList[0].relative_path);
-          }
+          setSelectedInstance(instList[0]);
+          loadInstanceChart(instList[0].relative_path);
         }
       } catch (err) {
         console.error("Failed to load 3W data:", err);
@@ -47,12 +46,10 @@ export default function OilWellIntelligencePage() {
   async function loadInstanceChart(relPath: string) {
     try {
       setChartLoading(true);
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/threew/instance-data?file_rel_path=${encodeURIComponent(relPath)}&downsample_points=300`);
-      if (res.ok) {
-        setTimeSeriesData(await res.json());
-      }
+      const data = await api.threewInstanceData(relPath, 300);
+      setTimeSeriesData(data);
     } catch (err) {
-      console.error("Failed to load instance chart:", err);
+      console.error("Failed to load instance timeseries:", err);
     } finally {
       setChartLoading(false);
     }

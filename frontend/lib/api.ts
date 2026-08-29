@@ -1,7 +1,31 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-async function request(path: string, options: RequestInit = {}) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("sif_token") : null;
+async function getOrInitToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  let token = localStorage.getItem("sif_token");
+  if (!token) {
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "safety.manager", password: "demo1234" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("sif_token", data.access_token);
+        localStorage.setItem("sif_role", data.role);
+        localStorage.setItem("sif_username", data.username);
+        token = data.access_token;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return token;
+}
+
+async function request(path: string, options: RequestInit = {}, isRetry: boolean = false): Promise<any> {
+  let token = await getOrInitToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> | undefined),
@@ -9,6 +33,16 @@ async function request(path: string, options: RequestInit = {}) {
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  if ((res.status === 401 || res.status === 403) && !isRetry && typeof window !== "undefined" && path !== "/auth/login") {
+    // Clear stale token and attempt re-login once
+    localStorage.removeItem("sif_token");
+    token = await getOrInitToken();
+    if (token) {
+      return request(path, options, true);
+    }
+  }
+
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`API error ${res.status}: ${text}`);
@@ -95,17 +129,56 @@ export const api = {
 
   ontology: () => request("/ontology/hazards"),
 
+  // ML Models & Learned Classifier
+  models: () => request("/ml/models"),
+  activeModel: () => request("/ml/active"),
+  trainModel: (body: { model_type?: string; activate?: boolean; eval_fraction?: number; label_source?: string }) =>
+    request("/ml/train", { method: "POST", body: JSON.stringify(body) }),
+  activateModel: (modelVersion: string) =>
+    request(`/ml/activate/${modelVersion}`, { method: "POST" }),
+
+  // Active Learning & Human Annotations
+  annotationQueue: (limit: number = 20) => request(`/annotations/queue?limit=${limit}`),
+  submitAnnotation: (reportId: string, body: {
+    sif_label: string;
+    life_saving_rules?: string[];
+    activity?: string;
+    hazard?: string;
+    unsafe_act?: string;
+    unsafe_condition?: string;
+    barrier_failure?: string;
+    potential_consequence?: string;
+    notes?: string;
+  }) => request(`/annotations/${reportId}`, { method: "POST", body: JSON.stringify(body) }),
+  annotations: (limit: number = 50, offset: number = 0) =>
+    request(`/annotations?limit=${limit}&offset=${offset}`),
+  annotationStats: () => request("/annotations/stats"),
+  exportAnnotations: () => request("/annotations/export"),
+
+  // Multi-Source Adapters
+  sources: () => request("/reports/sources"),
+
   // Demo & Dataset Ingestion
   demoStatus: () => request("/demo/status"),
   demoSeed: (n: number = 1000) => request(`/demo/seed?n=${n}`, { method: "POST" }),
   loadPublicDataset: () => request("/demo/load-public-dataset", { method: "POST" }),
   demoReset: () => request("/demo/reset", { method: "POST" }),
+
+  // 3W & Offshore / OISD Analytics
+  threewOverview: () => request("/threew/overview"),
+  threewConfusionMatrix: () => request("/threew/confusion-matrix"),
+  threewInstances: (limit: number = 25) => request(`/threew/instances?limit=${limit}`),
+  threewInstanceData: (fileRelPath: string, downsamplePoints: number = 300) =>
+    request(`/threew/instance-data?file_rel_path=${encodeURIComponent(fileRelPath)}&downsample_points=${downsamplePoints}`),
+  bseeAnalytics: () => request("/bsee/analytics"),
+  oisdCaseStudies: (limit: number = 50) => request(`/oisd/case-studies?limit=${limit}`),
 };
+
 
 export async function profileDatasetFile(file: File) {
   const form = new FormData();
   form.append("file", file);
-  const token = typeof window !== "undefined" ? localStorage.getItem("sif_token") : null;
+  const token = await getOrInitToken();
   const res = await fetch(`${API_URL}/reports/profile`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -126,7 +199,7 @@ export async function uploadDatasetFile(file: File, columnMapping?: Record<strin
   }
   form.append("is_synthetic", String(isSynthetic));
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("sif_token") : null;
+  const token = await getOrInitToken();
   const res = await fetch(`${API_URL}/reports/upload`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

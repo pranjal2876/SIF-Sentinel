@@ -15,6 +15,8 @@ import {
   Line,
 } from "recharts";
 
+import { api } from "@/lib/api";
+
 export default function OffshoreAnalyticsPage() {
   const [activeTab, setActiveTab] = useState<"bsee" | "oisd">("bsee");
   const [bseeData, setBseeData] = useState<any>(null);
@@ -26,11 +28,11 @@ export default function OffshoreAnalyticsPage() {
       try {
         setLoading(true);
         const [bRes, oRes] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/v1/bsee/analytics"),
-          fetch("http://127.0.0.1:8000/api/v1/oisd/case-studies?limit=50"),
+          api.bseeAnalytics().catch(() => null),
+          api.oisdCaseStudies(50).catch(() => null),
         ]);
-        if (bRes.ok) setBseeData(await bRes.json());
-        if (oRes.ok) setOisdData(await oRes.json());
+        if (bRes) setBseeData(bRes);
+        if (oRes) setOisdData(oRes);
       } catch (err) {
         console.error("Error loading offshore/OISD analytics:", err);
       } finally {
@@ -39,6 +41,7 @@ export default function OffshoreAnalyticsPage() {
     }
     loadData();
   }, []);
+
 
   const bseeYearlyChart = bseeData?.yearly_trends
     ? Object.entries(bseeData.yearly_trends).map(([year, count]) => ({ year, count }))

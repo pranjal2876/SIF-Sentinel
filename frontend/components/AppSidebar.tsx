@@ -13,6 +13,7 @@ export function AppSidebar({ onOpenCopilot, onOpenWhatIf }: AppSidebarProps) {
 
   const links = [
     { name: "Command Center", href: "/dashboard", icon: "dashboard" },
+    { name: "AI Review Queue", href: "/review-queue", icon: "rate_review" },
     { name: "Emerging Patterns", href: "/patterns", icon: "radar" },
     { name: "Barrier Health", href: "/barrier-health", icon: "health_and_safety" },
     { name: "Preventive Actions", href: "/actions", icon: "assignment_turned_in" },
