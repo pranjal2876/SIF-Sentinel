@@ -60,6 +60,75 @@ class AssessmentOut(BaseModel):
     overall_sif_score: float
     risk_level: str
     reasoning: List[str] = []
+    # Learned classifier predictions (Signal B)
+    sif_label: Optional[str] = None
+    sif_confidence: Optional[float] = None
+    classifier_model_version: Optional[str] = None
+    classifier_label_source: Optional[str] = None
+
+
+class AnnotationIn(BaseModel):
+    sif_label: str  # SIF | NON_SIF | UNCERTAIN
+    life_saving_rules: List[str] = []
+    activity: Optional[str] = None
+    hazard: Optional[str] = None
+    unsafe_act: Optional[str] = None
+    unsafe_condition: Optional[str] = None
+    barrier_failure: Optional[str] = None
+    potential_consequence: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class AnnotationOut(BaseModel):
+    id: str
+    report_id: str
+    annotator: str
+    sif_label: str
+    life_saving_rules: List[str] = []
+    activity: Optional[str] = None
+    hazard: Optional[str] = None
+    unsafe_act: Optional[str] = None
+    unsafe_condition: Optional[str] = None
+    barrier_failure: Optional[str] = None
+    potential_consequence: Optional[str] = None
+    notes: Optional[str] = None
+    label_provenance: str = "human_expert"
+    created_at: dt.datetime
+
+
+class TrainRequest(BaseModel):
+    model_type: str = Field(
+        default="tfidf_logreg",
+        description="Classifier architecture: 'tfidf_logreg' (primary baseline) or 'tfidf_xgboost' (comparator)",
+    )
+    activate: bool = Field(
+        default=False,
+        description="Whether to immediately set the newly trained model as active for live inference (default: False)",
+    )
+    eval_fraction: float = Field(
+        default=0.2,
+        ge=0.05,
+        le=0.5,
+        description="Fraction of the newest reports held out for temporal evaluation (default: 0.2)",
+    )
+    label_source: str = Field(
+        default="auto",
+        description="Training label source: 'hybrid' (human annotations override weak labels), 'human' (strictly human annotations), 'weak_bootstrap' (rule-based risk scores), or 'auto' (automatic best-fit)",
+    )
+
+    model_config = {
+        "protected_namespaces": (),
+        "json_schema_extra": {
+            "example": {
+                "model_type": "tfidf_logreg",
+                "activate": False,
+                "eval_fraction": 0.2,
+                "label_source": "hybrid",
+            }
+        },
+    }
+
+
 
 
 class ReportSummaryOut(BaseModel):

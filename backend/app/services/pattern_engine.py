@@ -107,17 +107,14 @@ def cluster_reports(
         clustering = DBSCAN(eps=effective_eps, min_samples=min(effective_min_samples, len(member_reports)), metric="precomputed")
         labels = clustering.fit_predict(dist_matrix)
 
-        # Group by sub-cluster label
+        # Group by sub-cluster label (exclude noise label -1 to avoid inflating recurrence)
         sub_clusters = defaultdict(list)
         for i, label in enumerate(labels):
-            if label != -1:  # ignore noise
+            if label != -1:
                 sub_clusters[label].append(i)
-            else:
-                # If total in category is tight enough, keep in base group
-                sub_clusters[0].append(i)
 
         for sub_id, sub_indices in sub_clusters.items():
-            if len(sub_indices) < CLUSTER_MIN_SAMPLES:
+            if len(sub_indices) < effective_min_samples:
                 continue
 
             sub_members = [member_reports[i] for i in sub_indices]

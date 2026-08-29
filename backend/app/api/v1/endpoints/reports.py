@@ -16,8 +16,12 @@ from app.models.schemas import ReportIn, ReportAnalyzeIn, ReportAnalyzeOut, Repo
 from app.services import pipeline, extraction_service, risk_engine, pattern_engine, action_engine
 from app.services.embedding_service import encode_texts, encode_single, cosine_similarity, batch_cosine_similarities
 from app.data.importers.data_profiler import profile_dataset, normalize_dataset_records
+from app.ml import predict_service
+from app.services.title_service import generate_display_title
 
 router = APIRouter()
+
+
 
 
 def _format_summary(report: SafetyReport) -> Dict[str, Any]:
@@ -25,7 +29,7 @@ def _format_summary(report: SafetyReport) -> Dict[str, Any]:
     extraction = report.extraction
     return {
         "id": report.id,
-        "title": report.description[:80] + ("..." if len(report.description) > 80 else ""),
+        "title": generate_display_title(report.description, report.raw_source),
         "description": report.description,
         "report_type": report.report_type,
         "location": report.location,
@@ -163,6 +167,7 @@ def get_report(report_id: str, db: Session = Depends(get_db)):
     return {
         "report": {
             "id": report.id,
+            "title": generate_display_title(report.description, report.raw_source),
             "description": report.description,
             "report_type": report.report_type,
             "location": report.location,
@@ -201,7 +206,22 @@ def get_report(report_id: str, db: Session = Depends(get_db)):
             "overall_sif_score": assessment.overall_sif_score if assessment else 0,
             "risk_level": assessment.risk_level if assessment else "LOW",
             "reasoning": assessment.reasoning if assessment else [],
+            "sif_label": assessment.sif_label if assessment else None,
+            "sif_confidence": assessment.sif_confidence if assessment else None,
+            "classifier_model_version": assessment.classifier_model_version if assessment else None,
+            "classifier_label_source": assessment.classifier_label_source if assessment else None,
         } if assessment else None,
+        "annotations": [
+            {
+                "id": a.id,
+                "annotator": a.annotator,
+                "sif_label": a.sif_label,
+                "life_saving_rules": a.life_saving_rules,
+                "notes": a.notes,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            }
+            for a in (report.annotations or [])
+        ],
         "patterns": patterns,
         "recommendations": recs,
     }
@@ -249,7 +269,7 @@ def get_similar_reports(report_id: str, limit: int = Query(6, ge=1, le=20), db: 
         first_link = rep.pattern_links[0] if rep.pattern_links else None
         results.append({
             "id": rep.id,
-            "title": rep.description[:80] + "...",
+            "title": generate_display_title(rep.description, rep.raw_source),
             "description": rep.description,
             "report_date": rep.report_date.isoformat() if rep.report_date else None,
             "location": rep.location,
@@ -296,11 +316,12 @@ def analyze_adhoc_report(body: ReportAnalyzeIn, db: Session = Depends(get_db)):
                 first_link = rep.pattern_links[0] if rep.pattern_links else None
                 similar_reports.append({
                     "id": rep.id,
-                    "title": rep.description[:80] + "...",
+                    "title": generate_display_title(rep.description, rep.raw_source),
                     "description": rep.description,
                     "report_date": rep.report_date.isoformat() if rep.report_date else None,
                     "location": rep.location,
                     "contractor": rep.contractor,
+
                     "hazard_category": ext.hazard_category if ext else None,
                     "control_failure": ext.control_failure if ext else None,
                     "sif_score": ass.overall_sif_score if ass else None,
@@ -310,6 +331,15 @@ def analyze_adhoc_report(body: ReportAnalyzeIn, db: Session = Depends(get_db)):
                 })
 
     assessment = risk_engine.assess(extraction, similar_report_count=similar_count)
+
+    # Supervised SIF Text Classifier (Signal B)
+    ml_pred = predict_service.predict(desc)
+    if ml_pred:
+        assessment["sif_label"] = ml_pred.sif_label
+        assessment["sif_confidence"] = ml_pred.sif_probability
+        assessment["classifier_model_version"] = ml_pred.model_version
+        assessment["classifier_label_source"] = ml_pred.label_source
+
 
     # Find matching pattern if any
     hazard_cat = extraction.get("hazard_category")
@@ -387,15 +417,23 @@ def profile_upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f"Failed to profile dataset: {str(e)}")
 
 
+@router.get("/sources")
+def get_available_sources():
+    """List available multi-source ingestion adapters."""
+    from app.adapters.registry import available_sources
+    return {"sources": available_sources()}
+
+
 @router.post("/upload")
 def upload_reports(
     file: UploadFile = File(...),
+    source: Optional[str] = Form(None),
     column_mapping: Optional[str] = Form(None),
     dataset_name: Optional[str] = Form(None),
     is_synthetic: bool = Form(False),
     db: Session = Depends(get_db)
 ):
-    """Uploads, normalizes, extracts, clusters, and analyzes an external safety dataset."""
+    """Uploads, normalizes, extracts, clusters, and analyzes a safety dataset via adapters or auto-profiler."""
     try:
         content = file.file.read()
         if not content:
@@ -408,13 +446,31 @@ def upload_reports(
             except Exception:
                 pass
 
-        records = normalize_dataset_records(
-            file_content=content,
-            filename=file.filename or "uploaded_dataset.csv",
-            column_mapping=mapping_dict,
-            source_dataset_name=dataset_name or file.filename or "Uploaded Dataset",
-            is_synthetic=is_synthetic
-        )
+        records = None
+        # If explicit source is provided, use adapter registry
+        if source and source.strip():
+            from app.adapters.registry import get_adapter
+            from app.adapters.io_utils import parse_upload
+            try:
+                adapter = get_adapter(source)
+                raw_rows = parse_upload(file.filename or "upload.csv", content)
+                canonical_reports = adapter.adapt_rows(raw_rows, mapping_dict)
+                records = [c.to_legacy_ingest_dict() for c in canonical_reports]
+                if dataset_name:
+                    for r in records:
+                        r["source_dataset"] = dataset_name
+            except ValueError as ve:
+                raise HTTPException(status_code=400, detail=str(ve))
+
+        # Fallback to general normalizer
+        if records is None:
+            records = normalize_dataset_records(
+                file_content=content,
+                filename=file.filename or "uploaded_dataset.csv",
+                column_mapping=mapping_dict,
+                source_dataset_name=dataset_name or file.filename or "Uploaded Dataset",
+                is_synthetic=is_synthetic
+            )
 
         if not records:
             raise HTTPException(status_code=400, detail="No valid safety reports found in file")
@@ -430,7 +486,7 @@ def upload_reports(
             "reports_ingested": result["reports_ingested"],
             "patterns_discovered": result["patterns_discovered"],
             "sif_precursors_detected": precursor_count,
-            "source_dataset": dataset_name or file.filename or "Uploaded Dataset",
+            "source_dataset": dataset_name or source or file.filename or "Uploaded Dataset",
         }
     except HTTPException:
         raise
@@ -438,9 +494,17 @@ def upload_reports(
         raise HTTPException(status_code=400, detail=f"Upload and processing error: {str(e)}")
 
 
+from app.core.security import require_role
+
 @router.delete("/reset")
-def reset_all_data(db: Session = Depends(get_db)):
-    """Clears all reports, extractions, assessments, patterns, and recommendations."""
+def reset_all_data(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("admin")),
+):
+    """Clears all reports, extractions, assessments, patterns, and recommendations (Admin only)."""
+    from app.models.database import Annotation, SafetyReview
+    db.query(Annotation).delete()
+    db.query(SafetyReview).delete()
     db.query(RecommendedAction).delete()
     db.query(ReportPatternLink).delete()
     db.query(PatternCluster).delete()
@@ -449,3 +513,4 @@ def reset_all_data(db: Session = Depends(get_db)):
     db.query(SafetyReport).delete()
     db.commit()
     return {"message": "All safety reports and pattern intelligence successfully cleared."}
+

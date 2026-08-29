@@ -41,15 +41,20 @@ def simulate_intervention_scenario(
 
     sorted_months = sorted(monthly_counts.keys())
     if not sorted_months:
-        # Fallback empty simulation
+        # Fallback empty simulation with consistent schema
         return {
-            "baseline_total": 0,
-            "projected_total": 0,
-            "avoided_precursors": 0,
+            "target_barrier": barrier_name or "Overall Safety Precursors",
             "reduction_pct": reduction_pct,
+            "baseline_monthly_average": 0.0,
+            "projected_monthly_average": 0.0,
+            "total_baseline_reports": 0,
+            "total_projected_reports": 0,
+            "avoided_precursor_observations": 0,
+            "avoided_high_sif_exposures": 0,
             "monthly_projection": [],
             "methodology_disclaimer": "Scenario model — not an accident prediction. Demonstrates projected trend reduction under targeted control intervention."
         }
+
 
     monthly_projection = []
     total_baseline = sum(monthly_counts.values())

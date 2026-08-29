@@ -15,21 +15,31 @@ _FALLBACK_VECTORIZER = None
 _VECTOR_DIM = 384
 
 
+_STATUS_LOGGED = False
+
+
 def get_embedding_model():
     """Returns the cached SentenceTransformer model instance or None if unavailable."""
-    global _MODEL_INSTANCE
+    global _MODEL_INSTANCE, _STATUS_LOGGED
     if _MODEL_INSTANCE is not None:
         return _MODEL_INSTANCE
 
     try:
         from sentence_transformers import SentenceTransformer
         from app.core.config import EMBEDDING_MODEL
-        logger.info(f"Loading SentenceTransformer model: {EMBEDDING_MODEL}")
         _MODEL_INSTANCE = SentenceTransformer(EMBEDDING_MODEL)
+        if not _STATUS_LOGGED:
+            print(f"[EMBEDDING DIAGNOSTIC] LOADED: sentence-transformers/{EMBEDDING_MODEL}")
+            logger.info(f"LOADED: sentence-transformers/{EMBEDDING_MODEL}")
+            _STATUS_LOGGED = True
         return _MODEL_INSTANCE
     except Exception as e:
-        logger.warning(f"Could not load SentenceTransformer: {e}. Falling back to scikit-learn TF-IDF.")
+        if not _STATUS_LOGGED:
+            print(f"[EMBEDDING DIAGNOSTIC] FALLBACK: TF-IDF (reason: {e})")
+            logger.warning(f"FALLBACK: TF-IDF (reason: {e})")
+            _STATUS_LOGGED = True
         return None
+
 
 
 def encode_texts(texts: List[str]) -> np.ndarray:

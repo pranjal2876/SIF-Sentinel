@@ -15,6 +15,8 @@ from app.models.database import (
 )
 from app.services import extraction_service, risk_engine, pattern_engine, action_engine
 from app.services.embedding_service import encode_texts, encode_single
+from app.ml import predict_service
+
 
 
 def ingest_report(db: Session, report_data: Dict[str, Any], is_synthetic: bool = True) -> SafetyReport:
@@ -75,6 +77,8 @@ def extract_and_assess_report(db: Session, report: SafetyReport, similar_count: 
         similar_report_count=similar_count
     )
 
+    ml_pred = predict_service.predict(report.description)
+
     assessment = SIFAssessment(
         report_id=report.id,
         severity_score=assessment_result["severity_score"],
@@ -85,6 +89,10 @@ def extract_and_assess_report(db: Session, report: SafetyReport, similar_count: 
         overall_sif_score=assessment_result["overall_sif_score"],
         risk_level=assessment_result["risk_level"],
         reasoning=assessment_result["reasoning"],
+        sif_label=ml_pred.sif_label if ml_pred else None,
+        sif_confidence=ml_pred.sif_probability if ml_pred else None,
+        classifier_model_version=ml_pred.model_version if ml_pred else None,
+        classifier_label_source=ml_pred.label_source if ml_pred else None,
     )
     db.add(assessment)
     db.flush()
@@ -159,6 +167,7 @@ def run_full_pipeline(
             source_severity=report.severity,
             similar_report_count=0
         )
+        ml_pred = predict_service.predict(report.description)
         assessment = SIFAssessment(
             report_id=report.id,
             severity_score=assessment_result["severity_score"],
@@ -169,6 +178,10 @@ def run_full_pipeline(
             overall_sif_score=assessment_result["overall_sif_score"],
             risk_level=assessment_result["risk_level"],
             reasoning=assessment_result["reasoning"],
+            sif_label=ml_pred.sif_label if ml_pred else None,
+            sif_confidence=ml_pred.sif_probability if ml_pred else None,
+            classifier_model_version=ml_pred.model_version if ml_pred else None,
+            classifier_label_source=ml_pred.label_source if ml_pred else None,
         )
         db.add(assessment)
 

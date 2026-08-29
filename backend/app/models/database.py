@@ -60,6 +60,7 @@ class SafetyReport(Base):
     assessment = relationship("SIFAssessment", back_populates="report", uselist=False, cascade="all, delete-orphan")
     pattern_links = relationship("ReportPatternLink", back_populates="report", cascade="all, delete-orphan")
     reviews = relationship("SafetyReview", back_populates="report", cascade="all, delete-orphan")
+    annotations = relationship("Annotation", back_populates="report", cascade="all, delete-orphan")
 
 
 class SafetyExtraction(Base):
@@ -98,6 +99,11 @@ class SIFAssessment(Base):
     overall_sif_score = Column(Float, default=0.0, index=True)
     risk_level = Column(String, index=True)  # CRITICAL, HIGH, MODERATE, LOW
     reasoning = Column(JSON, default=list)  # list of explainability reasons
+    # Learned classifier predictions (Signal B, separate from deterministic Signal A)
+    sif_label = Column(String, nullable=True)  # SIF | NON_SIF | UNCERTAIN
+    sif_confidence = Column(Float, nullable=True)  # P(SIF) or model confidence score
+    classifier_model_version = Column(String, nullable=True)
+    classifier_label_source = Column(String, nullable=True)
     assessed_at = Column(DateTime, default=now)
 
     report = relationship("SafetyReport", back_populates="assessment")
@@ -243,3 +249,25 @@ class ProcessingJob(Base):
     summary = Column(JSON, default=dict)
     created_at = Column(DateTime, default=now)
     completed_at = Column(DateTime, nullable=True)
+
+
+class Annotation(Base):
+    """Human-reviewed label for a report (Active Learning / HITL loop)."""
+    __tablename__ = "annotations"
+    id = Column(String, primary_key=True, default=gen_id)
+    report_id = Column(String, ForeignKey("safety_reports.id"), nullable=False, index=True)
+    annotator = Column(String, nullable=False)  # username / reviewer identity
+    sif_label = Column(String, nullable=False, index=True)  # SIF | NON_SIF | UNCERTAIN
+    life_saving_rules = Column(JSON, default=list)
+    activity = Column(String, nullable=True)
+    hazard = Column(String, nullable=True)
+    unsafe_act = Column(String, nullable=True)
+    unsafe_condition = Column(String, nullable=True)
+    barrier_failure = Column(String, nullable=True)
+    potential_consequence = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    label_provenance = Column(String, default="human_expert", nullable=False)
+    created_at = Column(DateTime, default=now)
+
+    report = relationship("SafetyReport", back_populates="annotations")
+
