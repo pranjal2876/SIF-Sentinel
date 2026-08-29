@@ -1,0 +1,22 @@
+{
+  "_readme": "This is the configuration file for OIL-compatible ingestion. Edit this mapping once authorized OIL data format is provided — no code changes required. Left side = canonical schema field, right side = source column header.",
+
+  "report_text": "Observation Description",
+  "report_type": "Observation Type",
+  "date": "Date",
+  "site": "Site",
+  "location": "Area",
+  "activity": "Activity",
+  "hazard": "Hazard",
+  "unsafe_act": "Unsafe Act",
+  "unsafe_condition": "Unsafe Condition",
+  "barrier_failure": "Control Failure",
+  "potential_consequence": "Potential Consequence",
+  "severity": "Severity",
+  "department": "Department",
+  "contractor": "Contractor",
+  "reporter_role": "Reporter Role",
+
+  "sif_label": "SIF Label",
+  "life_saving_rules": "Life Saving Rule"
+}
