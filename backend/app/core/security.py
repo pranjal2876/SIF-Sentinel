@@ -46,22 +46,66 @@ def verify_token(token: str) -> dict | None:
         return None
 
 
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
 def hash_password(password: str) -> str:
-    return hashlib.sha256((password + JWT_SECRET).encode()).hexdigest()
+    """Hash password securely using bcrypt."""
+    return pwd_context.hash(password)
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return hash_password(password) == hashed
+    """Verify password against bcrypt hash, with fallback for legacy sha256 demo hashes."""
+    if not hashed:
+        return False
+    if hashed.startswith("$2b$") or hashed.startswith("$2a$") or hashed.startswith("$2y$"):
+        try:
+            return pwd_context.verify(password, hashed)
+        except Exception:
+            return False
+    # Legacy SHA-256 fallback for pre-existing dev seeds
+    legacy_hash = hashlib.sha256((password + JWT_SECRET).encode()).hexdigest()
+    return hmac.compare_digest(legacy_hash, hashed)
 
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return payload
+
+
+def require_role(*roles: str):
+    """Enforce role-based access control (RBAC).
+
+    Usage:
+        @router.post("/train", dependencies=[Depends(require_role("admin", "manager"))])
+    """
+    def role_checker(current_user: dict = Depends(get_current_user)):
+        user_role = (current_user.get("role") or "").lower()
+        allowed = [r.lower() for r in roles]
+        if user_role not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access forbidden: role '{user_role}' lacks required permissions ({', '.join(roles)}).",
+            )
+        return current_user
+    return role_checker
+
+
+def require_roles(roles: list[str]):
+    return require_role(*roles)
+
