@@ -203,12 +203,13 @@ export default function ReportsListPage() {
                         <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3.5 px-4 max-w-md">
                             <span className="font-semibold text-slate-900 block line-clamp-1">
-                              {r.description}
+                              {r.title || r.description}
                             </span>
                             <span className="text-[10px] text-slate-400 mt-0.5 block">
                               Type: {r.report_type.replace("_", " ")} {r.contractor && `• Contractor: ${r.contractor}`}
                             </span>
                           </td>
+
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <span className="text-[11px] font-bold text-slate-700">
                               {r.hazard_category || "—"}

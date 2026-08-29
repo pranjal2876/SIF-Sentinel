@@ -10,16 +10,18 @@ import { riskColor, formatDate } from "@/lib/utils";
 interface ReportDetail {
   report: {
     id: string;
+    title?: string;
     description: string;
     report_type: string;
-    location: string;
-    site: string;
-    department: string;
-    contractor: string;
-    reporter_role: string;
-    report_date: string;
-    severity: string;
-    is_synthetic: boolean;
+    location?: string;
+    site?: string;
+    department?: string;
+    contractor?: string;
+    reporter_role?: string;
+    report_date?: string;
+    severity?: string;
+    potential_severity?: string;
+    is_synthetic?: boolean;
     source_dataset?: string;
   };
   extraction: {
@@ -47,7 +49,19 @@ interface ReportDetail {
     overall_sif_score: number;
     risk_level: string;
     reasoning: string[];
+    sif_label?: string | null;
+    sif_confidence?: number | null;
+    classifier_model_version?: string | null;
+    classifier_label_source?: string | null;
   } | null;
+  annotations?: {
+    id: string;
+    annotator: string;
+    sif_label: string;
+    life_saving_rules: string[];
+    notes?: string;
+    created_at?: string;
+  }[];
   patterns: { id: string; title: string; sif_score: number; trend: string; common_control_failure?: string }[];
   recommendations: { id: string; priority: string; action: string; rationale: string; pattern_title: string }[];
 }
@@ -169,20 +183,33 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
             {!loading && !error && data && (
               <>
-                {/* Original Report Card */}
-                <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-xs">
-                  <div className="flex items-center justify-between gap-4 mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Raw Safety Telemetry Observation
-                    </span>
-                    <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200 font-semibold">
-                      {data.report.is_synthetic ? "Synthetic Demonstration Data" : "Uploaded Telemetry"}
+                {/* Report Card: Short Title & Original Telemetry Evidence */}
+                <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-xs space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-100">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
+                        Incident Display Title
+                      </span>
+                      <h1 className="text-xl font-bold text-slate-900">
+                        {data.report.title || data.report.description.slice(0, 80)}
+                      </h1>
+                    </div>
+                    <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200 font-semibold self-start">
+                      {data.report.is_synthetic ? "Synthetic Demonstration Data" : "Uploaded Telemetry / Document"}
                     </span>
                   </div>
 
-                  <p className="text-lg font-medium text-slate-900 leading-relaxed border-l-4 border-primary pl-4 py-1 italic bg-slate-50/50 rounded-r-lg">
-                    &quot;{data.report.description}&quot;
-                  </p>
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                      Complete Telemetry / Raw Evidence
+                    </span>
+                    <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl">
+                      <p className="text-sm font-medium text-slate-900 leading-relaxed whitespace-pre-wrap">
+                        {data.report.description}
+                      </p>
+                    </div>
+                  </div>
+
 
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-6 pt-5 border-t border-slate-100 text-xs">
                     <div>
@@ -350,6 +377,104 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                     )}
                   </div>
                 )}
+
+                {/* DUAL SAFETY INTELLIGENCE SIGNALS */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-7 text-white shadow-md">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-700">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-xl">psychology</span>
+                        <h3 className="text-base font-bold text-white tracking-wide">Dual Safety Intelligence Signals</h3>
+                      </div>
+                      <p className="text-xs text-slate-300 mt-1">
+                        Independent transparent heuristic risk assessment paired with supervised learned text classification
+                      </p>
+                    </div>
+                    <Link
+                      href="/review-queue"
+                      className="px-3.5 py-1.5 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary-light text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 w-fit"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">rate_review</span>
+                      AI Review Queue
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    {/* Signal A */}
+                    <div className="bg-slate-800/80 rounded-xl p-5 border border-slate-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          SIGNAL A — Deterministic Heuristic Engine
+                        </span>
+                        <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded">
+                          Rule-Based / Ontology
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold text-white mb-2">
+                        {data.assessment?.overall_sif_score ?? 0} <span className="text-xs font-normal text-slate-400">/ 100 ({data.assessment?.risk_level} Risk)</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                        5-factor transparent scoring computed over extracted hazard, failed barrier ({data.extraction?.control_failure || "General"}), and recurring pattern context.
+                      </p>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-emerald-400">verified</span>
+                        <span>Full mathematical explainability without black-box opacity</span>
+                      </div>
+                    </div>
+
+                    {/* Signal B */}
+                    <div className="bg-slate-800/80 rounded-xl p-5 border border-slate-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          SIGNAL B — Supervised Text Classifier
+                        </span>
+                        <span className="text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/50 px-2 py-0.5 rounded">
+                          TF-IDF + Logistic Regression
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold text-white mb-2">
+                        {data.assessment?.sif_label || "PREDICTION ACTIVE"}{" "}
+                        <span className="text-xs font-normal text-slate-400">
+                          (Confidence: {data.assessment?.sif_confidence ? `${Math.round(data.assessment.sif_confidence * 100)}%` : "Evaluated"})
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                        Learned classifier output predicting SIF precursor likelihood directly from narrative report semantics.
+                      </p>
+                      <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-2">
+                        <span className="bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-700">
+                          Version: {data.assessment?.classifier_model_version || "Active Baseline"}
+                        </span>
+                        <span className="bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-700">
+                          Source: {data.assessment?.classifier_label_source || "weak_bootstrap_v1"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Human Expert Reviews for this report */}
+                  {data.annotations && data.annotations.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-slate-700">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block mb-2">
+                        Validated Human HSE Annotations ({data.annotations.length})
+                      </span>
+                      <div className="space-y-2">
+                        {data.annotations.map((ann, i) => (
+                          <div key={i} className="bg-slate-900/90 border border-slate-700 rounded-lg p-3 text-xs flex justify-between items-center">
+                            <div>
+                              <span className="font-bold text-white mr-2">Reviewer: {ann.annotator}</span>
+                              <span className="text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800 text-[10px] font-bold">
+                                {ann.sif_label}
+                              </span>
+                              {ann.notes && <p className="text-slate-400 text-[11px] mt-1">&quot;{ann.notes}&quot;</p>}
+                            </div>
+                            <span className="text-slate-500 text-[10px]">{ann.created_at ? formatDate(ann.created_at) : ""}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Semantic Intelligence: Similar Reports & Linked Patterns */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
