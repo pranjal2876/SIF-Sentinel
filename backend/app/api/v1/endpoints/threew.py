@@ -14,9 +14,12 @@ from app.services.threew.threew_loader import discover_3w_instances, load_instan
 from app.services.threew.threew_model import load_3w_model, predict_instance
 from app.services.threew.threew_evaluation import evaluate_3w_model
 
+from app.core.config import MODELS_DIR
+
 router = APIRouter()
 
-SPLIT_CACHE_PATH = Path(__file__).resolve().parents[4] / "data" / "models" / "threew_split_metadata.json"
+SPLIT_CACHE_PATH = MODELS_DIR / "threew_split_metadata.json"
+
 
 
 @router.get("/overview")

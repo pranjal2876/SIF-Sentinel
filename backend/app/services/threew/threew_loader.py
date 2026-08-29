@@ -9,13 +9,21 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Generator, Tuple
 import pandas as pd
-import pyarrow.parquet as pq
+
+try:
+    import pyarrow.parquet as pq
+except ImportError:
+    pq = None
+
 
 from app.services.threew import THREEW_CLASSES
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_THREEW_DIR = Path("D:/Startups/Datasets/3W_2.0.0")
+DEFAULT_THREEW_DIR = Path(os.environ.get("THREEW_DIR", "data/3w"))
+if not DEFAULT_THREEW_DIR.exists() and Path("D:/Startups/Datasets/3W_2.0.0").exists():
+    DEFAULT_THREEW_DIR = Path("D:/Startups/Datasets/3W_2.0.0")
+
 
 
 def discover_3w_instances(dataset_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
@@ -69,8 +77,12 @@ def load_instance_df(file_path: str, max_rows: Optional[int] = None) -> pd.DataF
         raise FileNotFoundError(f"3W instance file not found at '{file_path}'")
 
     try:
-        table = pq.read_table(str(path))
-        df = table.to_pandas()
+        if pq is not None:
+            table = pq.read_table(str(path))
+            df = table.to_pandas()
+        else:
+            df = pd.read_parquet(str(path))
+
         if max_rows and len(df) > max_rows:
             # Downsample if requested for quick visualization
             step = max(1, len(df) // max_rows)
@@ -79,6 +91,7 @@ def load_instance_df(file_path: str, max_rows: Optional[int] = None) -> pd.DataF
     except Exception as e:
         logger.error(f"Error loading 3W Parquet file '{file_path}': {str(e)}")
         raise
+
 
 
 def iterate_instances_streaming(
