@@ -276,6 +276,73 @@ export default function ReportAnalyzerPage() {
                   </div>
                 </div>
 
+                {/* Dual Safety Intelligence Signals */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-[20px]">troubleshoot</span>
+                        <h3 className="text-base font-bold text-slate-900">Dual Safety Intelligence Signals</h3>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Multi-signal risk consensus combining transparent heuristic scoring with learned supervised NLP classification
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded bg-slate-100 text-slate-700">
+                      Independent Signals
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Signal A: Deterministic Heuristic Engine */}
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-bold uppercase text-slate-500">Signal A — 5-Factor Risk Engine</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                            Deterministic
+                          </span>
+                        </div>
+                        <div className="text-2xl font-black text-slate-900 mt-1">
+                          {result.assessment?.overall_sif_score ?? "—"} <span className="text-xs font-normal text-slate-400">/ 100</span>
+                        </div>
+                        <span className={`inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded ${riskColor(result.assessment?.risk_level).bg} ${riskColor(result.assessment?.risk_level).text}`}>
+                          Risk Band: {result.assessment?.risk_level || "LOW"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-3 pt-3 border-t border-slate-200/60">
+                        Calculated from Severity (25), Barrier Failure (25), Exposure (20), Recurrence (20), and Consequence (10).
+                      </p>
+                    </div>
+
+                    {/* Signal B: Supervised Classifier */}
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-bold uppercase text-slate-500">Signal B — Supervised Classifier</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800">
+                            Learned ML Model
+                          </span>
+                        </div>
+                        <div className="text-2xl font-black text-slate-900 mt-1 flex items-center gap-2">
+                          <span>{result.assessment?.sif_label || "SIF"}</span>
+                          {result.assessment?.sif_confidence !== undefined && result.assessment?.sif_confidence !== null && (
+                            <span className="text-xs font-semibold text-slate-500">
+                              (P = {(result.assessment.sif_confidence * 100).toFixed(1)}%)
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-slate-600 font-medium block mt-1">
+                          Model: <span className="font-mono text-slate-900 font-bold">{result.assessment?.classifier_model_version || "tfidf_logreg-baseline"}</span>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-3 pt-3 border-t border-slate-200/60">
+                        Trained on domain precursor telemetry with held-out temporal evaluation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Evidence & Why Flagged */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
                   <h3 className="text-base font-bold text-slate-900 mb-2">Audit Explainability Factors</h3>
