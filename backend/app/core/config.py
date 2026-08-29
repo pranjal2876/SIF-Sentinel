@@ -4,6 +4,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
+MODELS_DIR = DATA_DIR / "models"
+MODELS_DIR.mkdir(exist_ok=True)
+OIL_COLUMN_MAPPING_PATH = Path(__file__).resolve().parent.parent / "adapters" / "oil_column_mapping.json"
+
 
 # Default to SQLite for zero-config local demo and fallback, swappable to PostgreSQL via DATABASE_URL
 DEFAULT_SQLITE_URL = f"sqlite:///{DATA_DIR / 'sifsentinel.db'}"
@@ -40,9 +44,19 @@ SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.40"))
 CLUSTER_MIN_SAMPLES = int(os.environ.get("CLUSTER_MIN_SAMPLES", "3"))
 CLUSTER_EPS = float(os.environ.get("CLUSTER_EPS", "0.55"))
 
-CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
+cors_env = os.environ.get("CORS_ORIGINS", "")
+
+if cors_env:
+    if cors_env.strip() == "*":
+        CORS_ORIGINS = ["*"]
+    else:
+        CORS_ORIGINS = [o.strip() for o in cors_env.split(",") if o.strip()]
+else:
+    CORS_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://sif-sentinel.vercel.app",
+    ]
+

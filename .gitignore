@@ -20,11 +20,12 @@ yarn-debug.log*
 pnpm-debug.log*
 
 # Local database
-backend/data/*.db
 backend/data/*.sqlite
 backend/data/*.sqlite3
 
-# Large datasets
+# Large archives & raw files
+*.zip
+*.tar.gz
 datasets/
 data/raw/
 data/processed/
@@ -40,13 +41,10 @@ OISD/
 BSEE/
 IHM/
 *.parquet
-*.csv
-*.xlsx
 
-# ML temporary files
+# ML temporary files (ignore general joblib/pkl but track trained models in backend/data/models/)
 *.pkl
 *.pickle
-*.joblib
 
 # Logs
 *.log
@@ -64,7 +62,10 @@ Thumbs.db
 tmp/
 temp/
 
+# Explicitly track essential model manifests and weights in backend/data/models/
 !backend/data/models/
+!backend/data/models/*.joblib
+!backend/data/models/manifest.json
 !backend/data/models/threew_rf_model.joblib
 !backend/data/models/threew_split_metadata.json
 
