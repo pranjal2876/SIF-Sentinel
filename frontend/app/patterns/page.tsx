@@ -160,8 +160,29 @@ export default function PatternsListPage() {
                 })}
 
                 {patterns.length === 0 && (
-                  <div className="col-span-full bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-500">
-                    No patterns match the selected filters.
+                  <div className="col-span-full bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-500 space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                      <span className="material-symbols-outlined text-2xl">hub</span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900">No SIF Patterns Currently Loaded</h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      No patterns match the selected filters, or the database needs demonstration telemetry. Click below to generate the SIH26165 demonstration dataset with deliberate recurring precursor patterns.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          await api.demoSeed(300);
+                          await fetchPatterns();
+                        } catch {
+                          setLoading(false);
+                        }
+                      }}
+                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm inline-flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                      <span>GENERATE DEMO SIF PATTERNS</span>
+                    </button>
                   </div>
                 )}
               </div>
