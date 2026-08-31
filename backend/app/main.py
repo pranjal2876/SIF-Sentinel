@@ -21,18 +21,24 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
-def seed_demo_data_if_empty(db: Session):
+import threading
+
+
+def _background_seed_worker():
+    db = SessionLocal()
     try:
         from app.models.database import SafetyReport, PatternCluster
         report_count = db.query(SafetyReport).count()
         pattern_count = db.query(PatternCluster).count()
         if report_count == 0 or pattern_count == 0:
-            print("[STARTUP] Database has no reports/patterns. Auto-seeding demonstration dataset...")
+            print("[BACKGROUND SEED] Database has no reports/patterns. Seeding demonstration dataset...")
             from app.api.v1.endpoints.demo import seed_synthetic_dataset
-            seed_synthetic_dataset(db=db, n=300)
-            print("[STARTUP] Demonstration dataset & patterns successfully auto-seeded!")
+            seed_synthetic_dataset(db=db, n=150)
+            print("[BACKGROUND SEED] Demonstration dataset & patterns successfully seeded!")
     except Exception as e:
-        print(f"[AUTO-SEED WARNING] {e}")
+        print(f"[BACKGROUND SEED WARNING] {e}")
+    finally:
+        db.close()
 
 
 @app.on_event("startup")
@@ -42,9 +48,10 @@ def on_startup():
         db = SessionLocal()
         try:
             seed_demo_users(db)
-            seed_demo_data_if_empty(db)
         finally:
             db.close()
+        # Launch background seed in a non-blocking thread so web port opens instantly
+        threading.Thread(target=_background_seed_worker, daemon=True).start()
     except Exception as e:
         print(f"[STARTUP WARNING] {e}")
 
