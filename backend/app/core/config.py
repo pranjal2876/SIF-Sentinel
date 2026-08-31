@@ -3,14 +3,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 MODELS_DIR = DATA_DIR / "models"
-MODELS_DIR.mkdir(exist_ok=True)
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
 OIL_COLUMN_MAPPING_PATH = Path(__file__).resolve().parent.parent / "adapters" / "oil_column_mapping.json"
 
-
-# Default to SQLite for zero-config local demo and fallback, swappable to PostgreSQL via DATABASE_URL
-DEFAULT_SQLITE_URL = f"sqlite:///{DATA_DIR / 'sifsentinel.db'}"
+_db_file_path = (DATA_DIR / "sifsentinel.db").resolve().as_posix()
+DEFAULT_SQLITE_URL = f"sqlite:///{_db_file_path}"
 DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_SQLITE_URL)
 
 # Optional LLM extraction. If no key is present, the system uses the
