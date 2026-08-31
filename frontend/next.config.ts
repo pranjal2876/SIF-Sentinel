@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/backend/:path*",
+        destination: "https://sif-sentinel.onrender.com/api/v1/:path*",
+      },
+    ];
+  },
   async redirects() {
     return [
       {

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sif-sentinel-backend
+    name: sif-sentinel
     runtime: python
     plan: free
     region: oregon
