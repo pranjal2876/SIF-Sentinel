@@ -140,6 +140,18 @@ def profile_dataset(file_content: bytes, filename: str = "dataset.csv") -> Dict[
     }
 
 
+def _safe_raw_val(v: Any) -> Optional[str]:
+    if v is None:
+        return None
+    if isinstance(v, (dt.datetime, dt.date)):
+        return v.isoformat()
+    if isinstance(v, (list, tuple, set)):
+        return ", ".join(str(x) for x in v)
+    if isinstance(v, float) and pd.isna(v):
+        return None
+    return str(v)
+
+
 def normalize_dataset_records(
     file_content: bytes,
     filename: str,
@@ -169,10 +181,7 @@ def normalize_dataset_records(
                 "potential_severity": r.get("potential_severity"),
                 "source_dataset": source_dataset_name or filename,
                 "is_synthetic": is_synthetic,
-                "raw_source": {
-                    k: (v.isoformat() if isinstance(v, (dt.datetime, dt.date)) else (str(v) if pd.notna(v) else None))
-                    for k, v in r.items()
-                },
+                "raw_source": {k: _safe_raw_val(v) for k, v in r.items()},
             })
         return canonical_records
 

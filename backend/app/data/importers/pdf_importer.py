@@ -197,7 +197,27 @@ def extract_pdf_records(file_input: Union[bytes, str, io.BytesIO]) -> Dict[str, 
     full_text = "\n\n".join(text_pages).strip()
     if not records and full_text:
         narrative_record = _extract_narrative_incident(full_text)
-        if narrative_record:
+        discrete_precursors: List[Dict[str, Any]] = []
+        try:
+            from app.adapters.pdf2ml import extract_industrial_narrative_precursors
+            discrete_precursors = extract_industrial_narrative_precursors(full_text)
+        except Exception as ex:
+            logger.warning(f"Industrial narrative precursor extraction skipped: {ex}")
+
+        if discrete_precursors and narrative_record:
+            site_val = narrative_record.get("site") or narrative_record.get("location") or "Site Alpha"
+            dept_val = narrative_record.get("department")
+            contractor_val = narrative_record.get("contractor")
+            date_val = narrative_record.get("report_date") or dt.datetime.utcnow()
+            for p in discrete_precursors:
+                p["site"] = site_val
+                p["location"] = site_val
+                p["department"] = dept_val
+                p["contractor"] = contractor_val
+                p["report_date"] = date_val
+                p["severity"] = narrative_record.get("severity", "HIGH")
+                records.append(p)
+        elif narrative_record:
             records.append(narrative_record)
 
     return {

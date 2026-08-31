@@ -150,6 +150,7 @@ export default function DatasetUploadPage() {
                         onClick={() => {
                           setFile(null);
                           setProfile(null);
+                          setError(null);
                         }}
                         className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                       >
@@ -160,13 +161,30 @@ export default function DatasetUploadPage() {
                         disabled={uploading || !mapping.description}
                         className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer shadow-sm"
                       >
-                        <span className="material-symbols-outlined text-[16px]">
+                        <span className={`material-symbols-outlined text-[16px] ${uploading ? "animate-spin" : ""}`}>
                           {uploading ? "sync" : "play_arrow"}
                         </span>
                         {uploading ? "Ingesting & Analyzing Telemetry..." : "INGEST & RUN PIPELINE"}
                       </button>
                     </div>
                   </div>
+
+                  {error && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium flex items-center gap-2 mb-6">
+                      <span className="material-symbols-outlined text-base text-red-500">error</span>
+                      <span className="flex-1">{error}</span>
+                    </div>
+                  )}
+
+                  {uploading && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 font-medium flex items-center gap-3 mb-6 animate-pulse">
+                      <span className="material-symbols-outlined animate-spin text-blue-600 text-lg">sync</span>
+                      <div>
+                        <p className="font-bold">Ingesting Safety Records & Running AI Pipeline...</p>
+                        <p className="text-[11px] text-blue-600">Extracting NLP precursor features, generating 384-dimensional SentenceTransformer embeddings, and running DBSCAN clustering.</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Mapping Grid */}
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">

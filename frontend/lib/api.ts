@@ -178,17 +178,38 @@ export const api = {
 export async function profileDatasetFile(file: File) {
   const form = new FormData();
   form.append("file", file);
-  const token = await getOrInitToken();
-  const res = await fetch(`${API_URL}/reports/profile`, {
+  let token = await getOrInitToken();
+  let res = await fetch(`${API_URL}/reports/profile`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
   });
-  if (!res.ok) throw new Error(await res.text());
+
+  if ((res.status === 401 || res.status === 403) && typeof window !== "undefined") {
+    localStorage.removeItem("sif_token");
+    token = await getOrInitToken();
+    if (token) {
+      res = await fetch(`${API_URL}/reports/profile`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+    }
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API error ${res.status}: ${text}`);
+  }
   return res.json();
 }
 
-export async function uploadDatasetFile(file: File, columnMapping?: Record<string, string>, datasetName?: string, isSynthetic: boolean = false) {
+export async function uploadDatasetFile(
+  file: File,
+  columnMapping?: Record<string, string>,
+  datasetName?: string,
+  isSynthetic: boolean = false
+) {
   const form = new FormData();
   form.append("file", file);
   if (columnMapping) {
@@ -199,12 +220,28 @@ export async function uploadDatasetFile(file: File, columnMapping?: Record<strin
   }
   form.append("is_synthetic", String(isSynthetic));
 
-  const token = await getOrInitToken();
-  const res = await fetch(`${API_URL}/reports/upload`, {
+  let token = await getOrInitToken();
+  let res = await fetch(`${API_URL}/reports/upload`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
   });
-  if (!res.ok) throw new Error(await res.text());
+
+  if ((res.status === 401 || res.status === 403) && typeof window !== "undefined") {
+    localStorage.removeItem("sif_token");
+    token = await getOrInitToken();
+    if (token) {
+      res = await fetch(`${API_URL}/reports/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+    }
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API error ${res.status}: ${text}`);
+  }
   return res.json();
 }
