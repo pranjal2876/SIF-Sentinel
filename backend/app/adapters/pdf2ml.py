@@ -56,7 +56,7 @@ INDUSTRIAL_NARRATIVE_RULES: List[Tuple[str, str, str, str, str, str]] = [
         "Potential hazardous atmosphere remained inside vessel."
     ),
     (
-        r"check\s+LEL\s+and\s+Oxygen",
+        r"(?:check\s+LEL|LEL\s+and\s+Oxygen|oxygen\s+and\s+LEL)",
         "SOP non-compliance",
         "Level gauge replacement / degassing / vessel entry",
         "act",
