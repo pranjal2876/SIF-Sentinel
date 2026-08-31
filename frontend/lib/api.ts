@@ -1,11 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export function getApiUrl(): string {
+  if (typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "") {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "http://localhost:8000/api/v1";
+    }
+    return "https://sif-sentinel.onrender.com/api/v1";
+  }
+  return "http://localhost:8000/api/v1";
+}
 
 async function getOrInitToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   let token = localStorage.getItem("sif_token");
   if (!token) {
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetch(`${getApiUrl()}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: "safety.manager", password: "demo1234" }),
@@ -32,7 +44,7 @@ async function request(path: string, options: RequestInit = {}, isRetry: boolean
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const res = await fetch(`${getApiUrl()}${path}`, { ...options, headers });
 
   if ((res.status === 401 || res.status === 403) && !isRetry && typeof window !== "undefined" && path !== "/auth/login") {
     // Clear stale token and attempt re-login once
@@ -179,7 +191,7 @@ export async function profileDatasetFile(file: File) {
   const form = new FormData();
   form.append("file", file);
   let token = await getOrInitToken();
-  let res = await fetch(`${API_URL}/reports/profile`, {
+  let res = await fetch(`${getApiUrl()}/reports/profile`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
@@ -189,7 +201,7 @@ export async function profileDatasetFile(file: File) {
     localStorage.removeItem("sif_token");
     token = await getOrInitToken();
     if (token) {
-      res = await fetch(`${API_URL}/reports/profile`, {
+      res = await fetch(`${getApiUrl()}/reports/profile`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: form,
@@ -221,7 +233,7 @@ export async function uploadDatasetFile(
   form.append("is_synthetic", String(isSynthetic));
 
   let token = await getOrInitToken();
-  let res = await fetch(`${API_URL}/reports/upload`, {
+  let res = await fetch(`${getApiUrl()}/reports/upload`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
@@ -231,7 +243,7 @@ export async function uploadDatasetFile(
     localStorage.removeItem("sif_token");
     token = await getOrInitToken();
     if (token) {
-      res = await fetch(`${API_URL}/reports/upload`, {
+      res = await fetch(`${getApiUrl()}/reports/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: form,
