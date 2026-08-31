@@ -11,6 +11,7 @@ from app.adapters.osha import OshaAdapter
 from app.adapters.niosh import NioshAdapter
 from app.adapters.oil import OilAdapter
 from app.adapters.ihm import IhmAdapter
+from app.adapters.pdf2ml import Pdf2MLAdapter
 
 _ADAPTERS: Dict[str, SourceAdapter] = {
     "synthetic": SyntheticAdapter(),
@@ -18,6 +19,7 @@ _ADAPTERS: Dict[str, SourceAdapter] = {
     "niosh": NioshAdapter(),
     "oil": OilAdapter(),
     "ihm": IhmAdapter(),
+    "pdf2ml": Pdf2MLAdapter(),
 }
 
 
