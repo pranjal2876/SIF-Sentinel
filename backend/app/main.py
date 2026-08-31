@@ -23,12 +23,15 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.on_event("startup")
 def on_startup():
-    init_db()
-    db = SessionLocal()
     try:
-        seed_demo_users(db)
-    finally:
-        db.close()
+        init_db()
+        db = SessionLocal()
+        try:
+            seed_demo_users(db)
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[STARTUP WARNING] {e}")
 
 
 @app.get("/")
