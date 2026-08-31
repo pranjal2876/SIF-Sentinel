@@ -105,6 +105,8 @@ npm run build
 
 ## 5. Documentation Directory (`docs/`)
 
+- [`docs/PITCH_DECK_SIH_MASTER.md`](file:///d:/Startups/SIF-Sentinel/docs/PITCH_DECK_SIH_MASTER.md): Comprehensive SIH Round 1 Pitch Deck guide, team of 6 allocation, and prototype walkthrough.
+- [`SIH_Pitch_Deck_SIF_Sentinel.pdf`](file:///d:/Startups/SIF-Sentinel/SIH_Pitch_Deck_SIF_Sentinel.pdf): Full-fledged SIH PPT template Pitch Deck in PDF format.
 - [`docs/TECHNICAL_ARCHITECTURE.md`](file:///d:/Startups/SIF-Sentinel/docs/TECHNICAL_ARCHITECTURE.md): Detailed architectural components, versions, and data flows.
 - [`docs/DATABASE_ARCHITECTURE.md`](file:///d:/Startups/SIF-Sentinel/docs/DATABASE_ARCHITECTURE.md): Database schemas, ER diagram, SQLite vs PostgreSQL pgvector target.
 - [`docs/ML_METHODOLOGY.md`](file:///d:/Startups/SIF-Sentinel/docs/ML_METHODOLOGY.md): Pretrained embeddings, DBSCAN clustering, 5-factor scoring, and supervised learning roadmap.
