@@ -22,6 +22,8 @@ pnpm-debug.log*
 # Local database
 backend/data/*.sqlite
 backend/data/*.sqlite3
+backend/data/*.db
+scratch/
 
 # Large archives & raw files
 *.zip

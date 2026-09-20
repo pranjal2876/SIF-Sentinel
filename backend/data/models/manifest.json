@@ -2694,5 +2694,240 @@
     },
     "artifact_path": "D:\\Startups\\SIF-Sentinel\\backend\\data\\models\\tfidf_logreg-20260829171944-966c28.joblib",
     "active": false
+  },
+  {
+    "model_version": "tfidf_logreg-20260920173644-8b597f",
+    "model_type": "tfidf_logreg",
+    "dataset_version": "weak_bootstrap_v1_20260920T173644Z_n151_train106_eval31_human0_weak151",
+    "trained_at": "2026-09-20T17:36:44.594304",
+    "n_train": 106,
+    "final_training_sample_count": 106,
+    "evaluation_sample_count": 31,
+    "total_reports_available": 151,
+    "human_annotated_reports": 0,
+    "weak_bootstrap_reports": 151,
+    "human_reports_used_for_training": 0,
+    "weak_bootstrap_reports_used_for_training": 106,
+    "human_reports_in_evaluation": 0,
+    "weak_bootstrap_reports_in_evaluation": 31,
+    "excluded_reports": 0,
+    "excluded_reason_counts": {
+      "orphaned_annotations_missing_parent_report": 15
+    },
+    "human_labels_by_class": {
+      "SIF": 0,
+      "NON_SIF": 0,
+      "UNCERTAIN": 0
+    },
+    "features": "TF-IDF, word 1-2 grams, max_features=20000, min_df=2, sublinear_tf",
+    "feature_configuration": {
+      "vectorizer": "TfidfVectorizer",
+      "ngram_range": [
+        1,
+        2
+      ],
+      "max_features": 20000,
+      "min_df": 2,
+      "sublinear_tf": true,
+      "class_weight": "balanced"
+    },
+    "label_definitions": {
+      "SIF": "P(SIF) >= 0.65",
+      "NON_SIF": "P(SIF) <= 0.35",
+      "UNCERTAIN": "0.35 < P(SIF) < 0.65",
+      "_training_label_definition": "Training labels are heuristically bootstrapped from the existing rule-based risk engine's overall_sif_score (>=65 SIF, <=30 NON_SIF, else UNCERTAIN) \u2014 NOT hand-annotated ground truth."
+    },
+    "label_source": "weak_bootstrap_v1",
+    "metrics": {
+      "precision": 0.6222,
+      "recall": 0.6667,
+      "f1": 0.6429,
+      "pr_auc": 1.0,
+      "sif_recall": 1.0,
+      "top_k_recall": 0.1923,
+      "confusion_matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          26
+        ]
+      ],
+      "support": {
+        "NON_SIF": 1,
+        "UNCERTAIN": 4,
+        "SIF": 26
+      },
+      "n_train": 106,
+      "n_eval": 31
+    },
+    "artifact_path": "D:\\Startups\\SIF-Sentinel\\backend\\data\\models\\tfidf_logreg-20260920173644-8b597f.joblib",
+    "active": false
+  },
+  {
+    "model_version": "tfidf_logreg-20260920173645-c48add",
+    "model_type": "tfidf_logreg",
+    "dataset_version": "hybrid_v1_20260920T173645Z_n164_train117_eval33_human5_weak159",
+    "trained_at": "2026-09-20T17:36:45.130898",
+    "n_train": 117,
+    "final_training_sample_count": 117,
+    "evaluation_sample_count": 33,
+    "total_reports_available": 164,
+    "human_annotated_reports": 5,
+    "weak_bootstrap_reports": 159,
+    "human_reports_used_for_training": 4,
+    "weak_bootstrap_reports_used_for_training": 113,
+    "human_reports_in_evaluation": 1,
+    "weak_bootstrap_reports_in_evaluation": 32,
+    "excluded_reports": 0,
+    "excluded_reason_counts": {
+      "orphaned_annotations_missing_parent_report": 15
+    },
+    "human_labels_by_class": {
+      "SIF": 3,
+      "NON_SIF": 2,
+      "UNCERTAIN": 0
+    },
+    "features": "TF-IDF, word 1-2 grams, max_features=20000, min_df=2, sublinear_tf",
+    "feature_configuration": {
+      "vectorizer": "TfidfVectorizer",
+      "ngram_range": [
+        1,
+        2
+      ],
+      "max_features": 20000,
+      "min_df": 2,
+      "sublinear_tf": true,
+      "class_weight": "balanced"
+    },
+    "label_definitions": {
+      "SIF": "P(SIF) >= 0.65",
+      "NON_SIF": "P(SIF) <= 0.35",
+      "UNCERTAIN": "0.35 < P(SIF) < 0.65",
+      "_training_label_definition": "Training labels are a hybrid combination: human HSE-reviewer annotations take precedence wherever available, combined with weak heuristic bootstrap labels."
+    },
+    "label_source": "hybrid_v1",
+    "metrics": {
+      "precision": 0.625,
+      "recall": 0.6667,
+      "f1": 0.6444,
+      "pr_auc": 1.0,
+      "sif_recall": 1.0,
+      "top_k_recall": 0.2143,
+      "confusion_matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          28
+        ]
+      ],
+      "support": {
+        "NON_SIF": 1,
+        "UNCERTAIN": 4,
+        "SIF": 28
+      },
+      "n_train": 117,
+      "n_eval": 33
+    },
+    "artifact_path": "D:\\Startups\\SIF-Sentinel\\backend\\data\\models\\tfidf_logreg-20260920173645-c48add.joblib",
+    "active": false
+  },
+  {
+    "model_version": "tfidf_logreg-20260920173645-9318a8",
+    "model_type": "tfidf_logreg",
+    "dataset_version": "human_annotated_v1_20260920T173645Z_n5_train3_eval2_human5_weak0",
+    "trained_at": "2026-09-20T17:36:45.203067",
+    "n_train": 3,
+    "final_training_sample_count": 3,
+    "evaluation_sample_count": 2,
+    "total_reports_available": 164,
+    "human_annotated_reports": 5,
+    "weak_bootstrap_reports": 0,
+    "human_reports_used_for_training": 3,
+    "weak_bootstrap_reports_used_for_training": 0,
+    "human_reports_in_evaluation": 2,
+    "weak_bootstrap_reports_in_evaluation": 0,
+    "excluded_reports": 159,
+    "excluded_reason_counts": {
+      "orphaned_annotations_missing_parent_report": 15,
+      "not_human_annotated": 159
+    },
+    "human_labels_by_class": {
+      "SIF": 3,
+      "NON_SIF": 2,
+      "UNCERTAIN": 0
+    },
+    "features": "TF-IDF, word 1-2 grams, max_features=20000, min_df=2, sublinear_tf",
+    "feature_configuration": {
+      "vectorizer": "TfidfVectorizer",
+      "ngram_range": [
+        1,
+        2
+      ],
+      "max_features": 20000,
+      "min_df": 2,
+      "sublinear_tf": true,
+      "class_weight": "balanced"
+    },
+    "label_definitions": {
+      "SIF": "P(SIF) >= 0.65",
+      "NON_SIF": "P(SIF) <= 0.35",
+      "UNCERTAIN": "0.35 < P(SIF) < 0.65",
+      "_training_label_definition": "Training labels are exclusively human HSE-reviewer annotations submitted via /annotations."
+    },
+    "label_source": "human_annotated_v1",
+    "metrics": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "pr_auc": 0.5,
+      "sif_recall": 0.0,
+      "top_k_recall": 0.0,
+      "confusion_matrix": [
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "support": {
+        "NON_SIF": 1,
+        "UNCERTAIN": 0,
+        "SIF": 1
+      },
+      "n_train": 3,
+      "n_eval": 2
+    },
+    "artifact_path": "D:\\Startups\\SIF-Sentinel\\backend\\data\\models\\tfidf_logreg-20260920173645-9318a8.joblib",
+    "active": false
   }
 ]
