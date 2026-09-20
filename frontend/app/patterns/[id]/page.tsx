@@ -75,6 +75,7 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
   const [activeTab, setActiveTab] = useState<"overview" | "graph">("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [isWhatIfOpen, setIsWhatIfOpen] = useState(false);
@@ -111,19 +112,23 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
   }, [id]);
 
   return (
-    <>
+    <div className="flex bg-[#F8FAFC] min-h-screen">
       <AppSidebar
         onOpenCopilot={() => setIsCopilotOpen(true)}
         onOpenWhatIf={() => setIsWhatIfOpen(true)}
+        isMobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
-      <div className="pl-64">
+
+      <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         <AppHeader
           onOpenCopilot={() => setIsCopilotOpen(true)}
           onOpenWhatIf={() => setIsWhatIfOpen(true)}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <main className="pt-20 min-h-screen bg-slate-100/60 p-8">
-          <div className="max-w-[1400px] mx-auto space-y-6">
+        <main className="pt-20 p-4 md:p-8 flex-1">
+          <div className="max-w-[1500px] mx-auto space-y-6">
 
             {/* Back link */}
             <Link
@@ -136,7 +141,7 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
 
             {loading && (
               <div className="bg-white rounded-2xl p-16 border border-slate-200 shadow-xs flex flex-col items-center justify-center text-slate-500">
-                <span className="material-symbols-outlined animate-spin text-3xl text-primary mb-3">sync</span>
+                <span className="material-symbols-outlined animate-spin text-3xl text-blue-600 mb-3">sync</span>
                 <p className="text-sm font-semibold text-slate-700">Loading pattern investigation telemetry...</p>
                 <p className="text-xs text-slate-400 mt-1">Retrieving semantic graph, barrier failure modes, and evidence</p>
               </div>
@@ -172,86 +177,42 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                   }}
                 />
 
-                {/* Executive "WHY THIS MATTERS" Banner */}
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-md border border-slate-700">
-                  <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                        Executive Intelligence Summary
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-400">SIF Precursor Cluster #{data.pattern.id.slice(0, 8)}</span>
-                  </div>
-
-                  <h2 className="text-xl font-bold mb-2">WHY THIS MATTERS</h2>
-                  <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
-                    <b>{data.pattern.report_count} semantically related safety observations</b> were identified across <b>{data.pattern.locations.length} operational facilities</b>.
-                    The dominant recurring failure mode is <b>{data.pattern.common_control_failure || "Critical Barrier Breakdown"}</b> (Domain: {data.pattern.common_hazard}).
-                    Occurrence velocity has shifted by <b>{data.pattern.trend_pct > 0 ? "+" : ""}{data.pattern.trend_pct}%</b> compared to the prior period.
-                    Prototype SIF risk assessment is <b>{data.pattern.sif_score}/100</b> ({data.pattern.sif_risk_level} Risk).
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-3 mt-5 pt-4 border-t border-slate-700/80">
-                    <button
-                      onClick={() => setActiveTab("graph")}
-                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">hub</span>
-                      CONNECT THE DOTS
-                    </button>
-                    <Link
-                      href={`/actions?barrier=${encodeURIComponent(data.pattern.common_control_failure || "")}`}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">add_task</span>
-                      CREATE PREVENTIVE ACTION
-                    </Link>
-                    <button
-                      onClick={() => setIsWhatIfOpen(true)}
-                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-600 cursor-pointer"
-                    >
-                      Simulate Reduction
-                    </button>
-                  </div>
-                </div>
-
                 {/* Pattern Header Card */}
-                <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-xs">
+                <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-xs space-y-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="max-w-3xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                           Discovered SIF Precursor
                         </span>
                         {data.pattern.iogp_rule && (
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
                             Life-Saving Rule: {data.pattern.iogp_rule}
                           </span>
                         )}
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded border border-purple-200">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
                           Confidence: {(data.pattern.confidence * 100).toFixed(0)}%
                         </span>
                       </div>
-                      <h1 className="text-2xl font-bold text-slate-900">{data.pattern.title}</h1>
+                      <h1 className="text-2xl font-black text-slate-900">{data.pattern.title}</h1>
                       <p className="text-sm text-slate-600 mt-2 leading-relaxed">{data.pattern.summary}</p>
                     </div>
 
-                    <div className="text-right shrink-0 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="text-right shrink-0 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                      <div className="text-3xl font-black text-slate-900">
                         <span className={data.pattern.sif_score >= 80 ? "text-red-600" : data.pattern.sif_score >= 60 ? "text-amber-600" : "text-slate-900"}>
                           {data.pattern.sif_score}
                         </span>
                         <span className="text-base text-slate-400 font-normal">/100</span>
                       </div>
-                      <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded mt-1 ${riskColor(data.pattern.sif_risk_level).bg} ${riskColor(data.pattern.sif_risk_level).text}`}>
+                      <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-full mt-1 ${riskColor(data.pattern.sif_risk_level).badge}`}>
                         {data.pattern.sif_risk_level} RISK
                       </span>
                     </div>
                   </div>
 
                   {/* Stats Bar */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-5 border-t border-slate-100">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
                     <div>
                       <span className="text-xs text-slate-400 block font-medium">Report Volume</span>
                       <span className="text-lg font-bold text-slate-900">{data.pattern.report_count} events</span>
@@ -273,10 +234,10 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   {/* Tab Navigation */}
-                  <div className="flex items-center gap-3 mt-6 pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                     <button
                       onClick={() => setActiveTab("overview")}
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                         activeTab === "overview"
                           ? "bg-slate-900 text-white shadow-xs"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -286,10 +247,10 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                     </button>
                     <button
                       onClick={() => setActiveTab("graph")}
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                         activeTab === "graph"
-                          ? "bg-primary text-white shadow-xs"
-                          : "bg-blue-50 text-primary border border-blue-200 hover:bg-blue-100"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
                       }`}
                     >
                       <span className="material-symbols-outlined text-[16px]">hub</span>
@@ -303,7 +264,7 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                   graphData ? (
                     <ConnectTheDotsGraph data={graphData} />
                   ) : (
-                    <div className="bg-white rounded-xl p-8 border border-slate-200 text-center text-slate-500">
+                    <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-500">
                       Graph topology data is being generated for this pattern.
                     </div>
                   )
@@ -314,14 +275,13 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                   <>
                     {/* Trend Chart & Why High Risk */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {/* Monthly Trend Chart */}
-                      <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
+                      <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
                         <div className="flex justify-between items-center mb-4">
                           <div>
                             <h3 className="text-base font-bold text-slate-900">Precursor Frequency Trajectory</h3>
                             <p className="text-xs text-slate-500">Monthly occurrence count across operational facilities</p>
                           </div>
-                          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded">
+                          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">
                             {data.pattern.trend.toUpperCase()}
                           </span>
                         </div>
@@ -345,8 +305,8 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       </div>
 
-                      {/* Why Flagged */}
-                      <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
+                      {/* Explainable SIF Assessment */}
+                      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
                         <div>
                           <h3 className="text-base font-bold text-slate-900 mb-1">Explainable SIF Assessment</h3>
                           <p className="text-xs text-slate-500 mb-4">Underlying mathematical risk drivers</p>
@@ -372,19 +332,19 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                         </div>
 
                         <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
-                          Semantic confidence: {(data.pattern.confidence * 100).toFixed(0)}%. Prototype methodology — configurable for OIL approved safety framework.
+                          Semantic confidence: {(data.pattern.confidence * 100).toFixed(0)}%.
                         </div>
                       </div>
                     </div>
 
-                    {/* Evidence Excerpts */}
-                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
+                    {/* Evidence Snippets */}
+                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
                       <div className="flex justify-between items-center mb-4">
                         <div>
                           <h3 className="text-base font-bold text-slate-900">Original Evidence Telemetry</h3>
                           <p className="text-xs text-slate-500">Traceable text snippets from raw safety observations</p>
                         </div>
-                        <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-semibold">
+                        <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-semibold">
                           {data.evidence.length} Highlighted Samples
                         </span>
                       </div>
@@ -404,79 +364,12 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
                             </div>
                             <Link
                               href={`/reports/${ev.report_id}`}
-                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 w-fit mt-1"
+                              className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 w-fit mt-1"
                             >
                               View Report Analysis →
                             </Link>
                           </div>
                         ))}
-                      </div>
-                    </div>
-
-                    {/* Recommended Interventions & Related Reports */}
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                      {/* Recommendations */}
-                      <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-primary text-[20px]">assignment_turned_in</span>
-                            <h3 className="text-base font-bold text-slate-900">Prioritized Preventive Interventions</h3>
-                          </div>
-                          <Link
-                            href={`/actions?barrier=${encodeURIComponent(data.pattern.common_control_failure || "")}`}
-                            className="text-xs text-primary font-bold hover:underline"
-                          >
-                            + Add Action
-                          </Link>
-                        </div>
-
-                        <div className="space-y-3">
-                          {data.recommendations.map((rec) => {
-                            const recRisk = riskColor(rec.priority);
-                            return (
-                              <div key={rec.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${recRisk.bg} ${recRisk.text}`}>
-                                    {rec.priority} PRIORITY
-                                  </span>
-                                  <span className="text-xs text-slate-400">{rec.evidence_count} supporting events</span>
-                                </div>
-                                <p className="text-sm font-bold text-slate-900">{rec.action}</p>
-                                <p className="text-xs text-slate-500 mt-1">{rec.rationale}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Related Reports List */}
-                      <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs flex flex-col">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-base font-bold text-slate-900">
-                            Linked Precursor Reports ({data.related_reports.length})
-                          </h3>
-                          <span className="text-xs text-slate-400">Semantic Cosine Rank</span>
-                        </div>
-
-                        <div className="flex-1 divide-y divide-slate-100 overflow-y-auto max-h-[380px] pr-1">
-                          {data.related_reports.map((rep) => (
-                            <Link key={rep.id} href={`/reports/${rep.id}`} className="block py-3 hover:bg-slate-50 px-2 rounded-lg transition-colors">
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="text-xs font-semibold text-slate-800 line-clamp-1">{rep.title}</p>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 shrink-0">
-                                  Sim: {(rep.similarity * 100).toFixed(0)}%
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                                <span>{rep.location}</span>
-                                <span>•</span>
-                                <span>{rep.contractor}</span>
-                                <span>•</span>
-                                <span>{formatDate(rep.report_date)}</span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
                       </div>
                     </div>
                   </>
@@ -498,6 +391,6 @@ export default function PatternDetailPage({ params }: { params: Promise<{ id: st
         onClose={() => setIsWhatIfOpen(false)}
         initialBarrier={data?.pattern.common_control_failure || undefined}
       />
-    </>
+    </div>
   );
 }
