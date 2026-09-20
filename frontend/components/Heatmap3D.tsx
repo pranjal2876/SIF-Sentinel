@@ -12,6 +12,206 @@ interface HeatmapSite {
   top_control_failure?: string;
 }
 
+function getRiskFill(risk_level: string, score: number) {
+  if (risk_level === "CRITICAL" || score >= 80) return { top: "#ef4444", side: "#b91c1c", front: "#dc2626" };
+  if (risk_level === "HIGH" || score >= 60) return { top: "#f97316", side: "#c2410c", front: "#ea580c" };
+  if (risk_level === "MODERATE" || score >= 40) return { top: "#eab308", side: "#a16207", front: "#ca8a04" };
+  return { top: "#22c55e", side: "#15803d", front: "#16a34a" };
+}
+
+function IsometricBarChart({ sites }: { sites: HeatmapSite[] }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  // Chart constants
+  const W = 600;
+  const H = 320;
+  const BAR_W = 52;    // isometric bar width
+  const BAR_D = 22;    // depth of bar
+  const MAX_H = 180;   // max bar height in px
+  const BASELINE_Y = H - 40; // y position of the ground
+
+  // Isometric offsets: each bar column is offset diagonally
+  const barCount = Math.min(sites.length, 6);
+  const totalWidth = barCount * (BAR_W + 18);
+  const startX = (W - totalWidth) / 2 + 10;
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width="100%"
+      height="100%"
+      style={{ display: "block" }}
+      aria-label="Facility Risk Heatmap"
+    >
+      {/* Background */}
+      <rect width={W} height={H} fill="#0f172a" rx={12} />
+
+      {/* Subtle grid lines */}
+      {Array.from({ length: 5 }).map((_, i) => {
+        const y = BASELINE_Y - (i + 1) * (MAX_H / 5);
+        return (
+          <line
+            key={i}
+            x1={20}
+            y1={y}
+            x2={W - 20}
+            y2={y}
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth={1}
+          />
+        );
+      })}
+
+      {/* Y-axis labels */}
+      {[0, 25, 50, 75, 100].map((val, i) => (
+        <text
+          key={val}
+          x={14}
+          y={BASELINE_Y - (val / 100) * MAX_H + 4}
+          fill="rgba(255,255,255,0.3)"
+          fontSize={9}
+          textAnchor="middle"
+        >
+          {val}
+        </text>
+      ))}
+
+      {/* Bars */}
+      {sites.slice(0, 6).map((site, idx) => {
+        const barH = Math.max(16, (site.score / 100) * MAX_H);
+        const x = startX + idx * (BAR_W + 18);
+        const y = BASELINE_Y - barH;
+        const colors = getRiskFill(site.risk_level, site.score);
+        const isHov = hovered === site.site;
+
+        // Isometric bar: front face + top face + right face
+        const topPoints = `${x},${y} ${x + BAR_W},${y} ${x + BAR_W + BAR_D},${y - BAR_D} ${x + BAR_D},${y - BAR_D}`;
+        const rightPoints = `${x + BAR_W},${y} ${x + BAR_W},${BASELINE_Y} ${x + BAR_W + BAR_D},${BASELINE_Y - BAR_D} ${x + BAR_W + BAR_D},${y - BAR_D}`;
+
+        return (
+          <g
+            key={site.site}
+            onMouseEnter={() => setHovered(site.site)}
+            onMouseLeave={() => setHovered(null)}
+            style={{ cursor: "pointer" }}
+          >
+            {/* Front face */}
+            <rect
+              x={x}
+              y={y}
+              width={BAR_W}
+              height={barH}
+              fill={isHov ? colors.front : colors.front}
+              opacity={isHov ? 1 : 0.92}
+              rx={2}
+            />
+
+            {/* Top face (isometric) */}
+            <polygon points={topPoints} fill={colors.top} opacity={isHov ? 1 : 0.95} />
+
+            {/* Right face (isometric) */}
+            <polygon points={rightPoints} fill={colors.side} opacity={isHov ? 1 : 0.85} />
+
+            {/* Glow on hover */}
+            {isHov && (
+              <rect
+                x={x - 2}
+                y={y - 2}
+                width={BAR_W + 4}
+                height={barH + 4}
+                fill="none"
+                stroke={colors.top}
+                strokeWidth={2}
+                opacity={0.7}
+                rx={3}
+              />
+            )}
+
+            {/* Score label on bar */}
+            <text
+              x={x + BAR_W / 2}
+              y={y - 6}
+              fill="white"
+              fontSize={10}
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              {site.score}
+            </text>
+
+            {/* Site label below baseline */}
+            <text
+              x={x + BAR_W / 2}
+              y={BASELINE_Y + 14}
+              fill="rgba(255,255,255,0.6)"
+              fontSize={9}
+              fontWeight="600"
+              textAnchor="middle"
+            >
+              {site.site.length > 10 ? site.site.slice(0, 9) + "…" : site.site}
+            </text>
+
+            {/* Tooltip on hover */}
+            {isHov && (
+              <g>
+                <rect
+                  x={Math.min(x - 10, W - 160)}
+                  y={Math.max(4, y - 72)}
+                  width={148}
+                  height={66}
+                  rx={6}
+                  fill="#1e293b"
+                  stroke={colors.top}
+                  strokeWidth={1}
+                />
+                <text
+                  x={Math.min(x - 10, W - 160) + 10}
+                  y={Math.max(4, y - 72) + 16}
+                  fill="white"
+                  fontSize={10}
+                  fontWeight="bold"
+                >
+                  {site.site}
+                </text>
+                <text
+                  x={Math.min(x - 10, W - 160) + 10}
+                  y={Math.max(4, y - 72) + 30}
+                  fill={colors.top}
+                  fontSize={9}
+                  fontWeight="600"
+                >
+                  SIF Score: {site.score}/100 · {site.risk_level}
+                </text>
+                <text
+                  x={Math.min(x - 10, W - 160) + 10}
+                  y={Math.max(4, y - 72) + 43}
+                  fill="rgba(255,255,255,0.6)"
+                  fontSize={9}
+                >
+                  {site.count} linked reports
+                </text>
+                {site.top_control_failure && (
+                  <text
+                    x={Math.min(x - 10, W - 160) + 10}
+                    y={Math.max(4, y - 72) + 56}
+                    fill="rgba(255,255,255,0.45)"
+                    fontSize={8}
+                  >
+                    Barrier: {site.top_control_failure.slice(0, 22)}
+                  </text>
+                )}
+              </g>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Baseline */}
+      <line x1={20} y1={BASELINE_Y} x2={W - 20} y2={BASELINE_Y} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
+    </svg>
+  );
+}
+
 export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
   const [viewMode, setViewMode] = useState<"3d" | "grid">("3d");
 
@@ -22,18 +222,10 @@ export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
     { site: "Offshore-3", score: 89, count: 56, risk_level: "CRITICAL", top_hazard: "Well Control", top_control_failure: "BOP secondary seal" },
     { site: "Storage Tank", score: 32, count: 18, risk_level: "LOW", top_hazard: "Confined Space", top_control_failure: "Atmospheric testing" },
     { site: "Utility Block", score: 28, count: 14, risk_level: "LOW", top_hazard: "PPE", top_control_failure: "Hearing protection" },
+    { site: "Flare Stack", score: 71, count: 24, risk_level: "HIGH", top_hazard: "Hot Work", top_control_failure: "Permit-to-work" },
   ];
 
   const displayData = data.length > 0 ? data : defaultSites;
-
-  const positions = [
-    { bottom: "25%", left: "22%" },
-    { bottom: "55%", left: "55%" },
-    { bottom: "70%", left: "28%" },
-    { bottom: "35%", left: "75%" },
-    { bottom: "60%", left: "14%" },
-    { bottom: "80%", left: "70%" },
-  ];
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between h-full">
@@ -53,7 +245,8 @@ export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 mr-2 hidden sm:flex">
+          {/* Legend */}
+          <div className="hidden sm:flex items-center gap-2 text-[11px] font-semibold text-slate-600 mr-2">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-red-500" /> Critical
             </span>
@@ -68,6 +261,7 @@ export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
             </span>
           </div>
 
+          {/* Toggle */}
           <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
             <button
               onClick={() => setViewMode("3d")}
@@ -75,7 +269,7 @@ export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
                 viewMode === "3d" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              3D Matrix
+              Bar Chart
             </button>
             <button
               onClick={() => setViewMode("grid")}
@@ -90,69 +284,16 @@ export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
       </div>
 
       {viewMode === "3d" ? (
-        <div className="relative bg-[#0F172A] rounded-xl overflow-hidden min-h-[280px] flex items-center justify-center border border-slate-800 shadow-inner">
-          {/* Isometric grid overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-
-          {/* Isometric Map Surface */}
-          <div className="w-[88%] h-[85%] relative transform rotate-x-[55deg] rotate-z-[-38deg] preserve-3d transition-transform duration-700 ease-in-out hover:rotate-z-[-32deg]">
-            {displayData.slice(0, 6).map((site, idx) => {
-              const pos = positions[idx % positions.length];
-              const height = Math.max(40, (site.score / 100) * 140);
-
-              let colorBase = "bg-blue-600";
-              let glowColor = "rgba(59,130,246,";
-              if (site.risk_level === "CRITICAL" || site.score >= 80) {
-                colorBase = "bg-red-500";
-                glowColor = "rgba(239,68,68,";
-              } else if (site.risk_level === "HIGH" || site.score >= 60) {
-                colorBase = "bg-orange-500";
-                glowColor = "rgba(249,115,22,";
-              } else if (site.risk_level === "MODERATE" || site.score >= 40) {
-                colorBase = "bg-amber-500";
-                glowColor = "rgba(234,179,8,";
-              } else {
-                colorBase = "bg-emerald-500";
-                glowColor = "rgba(34,197,94,";
-              }
-
-              return (
-                <div
-                  key={site.site}
-                  className={`absolute w-12 ${colorBase} rounded-xs shadow-[0_0_15px_${glowColor}0.6)] transform translate-z-[10px] transition-all duration-300 hover:brightness-125 cursor-pointer flex items-end justify-center group/bar`}
-                  style={{ bottom: pos.bottom, left: pos.left, height: `${height}px` }}
-                >
-                  {/* Top face */}
-                  <div className={`absolute top-0 w-full h-4 ${colorBase} brightness-125 transform origin-bottom rotate-x-[90deg] shadow-sm`} />
-                  {/* Side face */}
-                  <div className={`absolute right-0 w-4 h-full ${colorBase} brightness-90 transform origin-left rotate-y-[90deg]`} />
-
-                  {/* Pin label */}
-                  <div className="absolute top-0 transform -translate-y-6 -rotate-z-[-38deg] -rotate-x-[-55deg] whitespace-nowrap px-2 py-0.5 rounded-full bg-slate-900/90 text-white text-[10px] font-bold border border-slate-700 shadow-md">
-                    {site.site}
-                  </div>
-
-                  {/* Tooltip on hover */}
-                  <div className="absolute bottom-full mb-6 whitespace-nowrap bg-slate-950 text-white px-3 py-2 rounded-xl shadow-2xl text-[11px] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none transform -rotate-z-[-38deg] -rotate-x-[-55deg] z-50 border border-slate-700">
-                    <div className="font-bold text-xs text-white">{site.site}</div>
-                    <div className="text-amber-400 font-semibold">Avg SIF: {site.score}/100</div>
-                    <div className="text-slate-300">{site.count} safety reports</div>
-                    {site.top_control_failure && (
-                      <div className="text-[10px] text-slate-400 mt-1 border-t border-slate-800 pt-1">
-                        Top Barrier: {site.top_control_failure}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="rounded-xl overflow-hidden min-h-[240px] flex items-center justify-center">
+          <IsometricBarChart sites={displayData} />
         </div>
       ) : (
         /* Grid / Card view */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 min-h-[280px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 min-h-[240px]">
           {displayData.map((site) => {
             const risk = riskColor(site.risk_level);
+            const colors = getRiskFill(site.risk_level, site.score);
+            const pct = site.score;
             return (
               <div
                 key={site.site}
@@ -169,7 +310,14 @@ export function Heatmap3D({ data = [] }: { data: HeatmapSite[] }) {
                     {site.score}
                     <span className="text-xs font-normal text-slate-400">/100</span>
                   </div>
-                  <span className="text-[11px] text-slate-500">{site.count} Linked reports</span>
+                  {/* Progress bar */}
+                  <div className="h-1.5 bg-slate-200 rounded-full mt-1.5 mb-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, background: colors.front }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-500">{site.count} linked reports</span>
                 </div>
                 {site.top_control_failure && (
                   <div className="text-[10px] text-slate-500 pt-1.5 border-t border-slate-200/60 truncate">
