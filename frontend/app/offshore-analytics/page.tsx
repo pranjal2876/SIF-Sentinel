@@ -55,7 +55,7 @@ export default function OffshoreAnalyticsPage() {
       <div className="md:pl-64">
         <AppHeader />
 
-        <main className="pt-20 min-h-screen bg-[#F8FAFC] p-4 md:p-8">
+        <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
           <div className="max-w-[1500px] mx-auto space-y-6">
             {/* Header */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">

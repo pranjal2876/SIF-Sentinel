@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 interface AppSidebarProps {
   onOpenCopilot?: () => void;
   onOpenWhatIf?: () => void;
+  onOpenProfile?: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
@@ -13,24 +15,25 @@ interface AppSidebarProps {
 export function AppSidebar({
   onOpenCopilot,
   onOpenWhatIf,
+  onOpenProfile,
   isMobileOpen = false,
   onCloseMobile,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const [username, setUsername] = useState("Pranjal Sharma");
-  const [role, setRole] = useState("Administrator");
+  const [username, setUsername] = useState("Safety Manager");
+  const [role, setRole] = useState("Corporate HSE");
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("sif_username");
       const storedRole = localStorage.getItem("sif_role");
       if (storedUser) {
-        // Format username nicely (e.g., safety.manager -> Safety Manager or Pranjal Sharma)
         if (storedUser.toLowerCase().includes("pranjal")) setUsername("Pranjal Sharma");
-        else setUsername(storedUser.split(".").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" "));
+        else setUsername(storedUser.split(".").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" "));
       }
       if (storedRole) {
-        setRole(storedRole.split("_").map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(" "));
+        setRole(storedRole.split("_").map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(" "));
       }
     }
   }, []);
@@ -70,6 +73,12 @@ export function AppSidebar({
       .slice(0, 2)
       .join("")
       .toUpperCase();
+  };
+
+  const handleOpenSettings = () => {
+    if (onCloseMobile) onCloseMobile();
+    if (onOpenProfile) onOpenProfile();
+    else setShowProfileModal(true);
   };
 
   const sidebarContent = (
@@ -186,24 +195,28 @@ export function AppSidebar({
             SYSTEM
           </div>
           <div className="space-y-0.5">
-            <Link
-              href="/dashboard"
-              onClick={onCloseMobile}
-              className="flex items-center px-3 py-2 rounded-xl text-[13px] font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all group"
+            <button
+              type="button"
+              onClick={handleOpenSettings}
+              className="w-full flex items-center px-3 py-2 rounded-xl text-[13px] font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all text-left cursor-pointer group"
             >
               <span className="material-symbols-outlined mr-3 text-[19px] text-slate-400 group-hover:text-slate-200">
                 settings
               </span>
-              <span>Settings</span>
-            </Link>
+              <span>Settings &amp; Personas</span>
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* User Info & Status Footer */}
+      {/* User Info & Status Footer - Clickable to open Profile */}
       <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
-        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/50 border border-slate-700/50">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+        <button
+          type="button"
+          onClick={handleOpenSettings}
+          className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-all text-left cursor-pointer group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-blue-600 group-hover:bg-blue-500 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm transition-colors">
             {getInitials(username)}
           </div>
           <div className="min-w-0 flex-1">
@@ -211,8 +224,17 @@ export function AppSidebar({
             <p className="text-[10px] text-slate-400 truncate">{role}</p>
           </div>
           <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Connected to Intelligence API" />
-        </div>
+        </button>
       </div>
+
+      <ProfileSettingsModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onUserChange={(newName, newRole) => {
+          setUsername(newName);
+          setRole(newRole);
+        }}
+      />
     </div>
   );
 

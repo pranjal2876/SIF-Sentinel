@@ -162,7 +162,7 @@ export default function DashboardPage() {
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <main className="pt-20 p-4 md:p-8 flex-1">
+        <main className="p-4 md:p-8 flex-1">
           <div className="max-w-[1550px] mx-auto space-y-6">
 
             {/* Top Greeting & Operational Header */}

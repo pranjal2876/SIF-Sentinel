@@ -123,10 +123,10 @@ function ActionManagementContent() {
     }
   }
 
-  const criticalCount = actions.filter((a) => a.priority === "CRITICAL").length || 3;
-  const highCount = actions.filter((a) => a.priority === "HIGH").length || 5;
-  const mediumCount = actions.filter((a) => a.priority === "MODERATE" || a.priority === "MEDIUM").length || 4;
-  const lowCount = actions.filter((a) => a.priority === "LOW").length || 2;
+  const criticalCount = actions.filter((a) => a.priority === "CRITICAL").length;
+  const highCount = actions.filter((a) => a.priority === "HIGH").length;
+  const mediumCount = actions.filter((a) => a.priority === "MODERATE" || a.priority === "MEDIUM").length;
+  const lowCount = actions.filter((a) => a.priority === "LOW").length;
 
   const filteredActions = actions.filter((act) => {
     if (activeTab === "in_progress") return act.status === "IN_PROGRESS" || act.status === "OPEN";
@@ -159,7 +159,7 @@ function ActionManagementContent() {
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <main className="pt-20 p-4 md:p-8 flex-1">
+        <main className="p-4 md:p-8 flex-1">
           <div className="max-w-[1550px] mx-auto space-y-6">
 
             {/* Header matching Reference */}

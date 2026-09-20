@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 interface AppHeaderProps {
   onDiscover?: () => void;
@@ -9,6 +10,7 @@ interface AppHeaderProps {
   onOpenCopilot?: () => void;
   onOpenWhatIf?: () => void;
   onToggleMobileMenu?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export function AppHeader({
@@ -17,14 +19,15 @@ export function AppHeader({
   onOpenCopilot,
   onOpenWhatIf,
   onToggleMobileMenu,
+  onOpenProfile,
 }: AppHeaderProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [selectedFacility, setSelectedFacility] = useState("All Facilities");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [username, setUsername] = useState("Pranjal Sharma");
-  const [role, setRole] = useState("Administrator");
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [username, setUsername] = useState("Safety Manager");
+  const [role, setRole] = useState("Corporate HSE");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -45,6 +48,16 @@ export function AppHeader({
     if (search.trim()) {
       router.push(`/reports?keyword=${encodeURIComponent(search.trim())}`);
     }
+  };
+
+  const handleSignOut = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("sif_token");
+      localStorage.removeItem("sif_role");
+      localStorage.removeItem("sif_username");
+    }
+    setShowUserMenu(false);
+    router.push("/login");
   };
 
   const notifications = [
@@ -72,173 +85,186 @@ export function AppHeader({
   ];
 
   return (
-    <header className="fixed top-0 left-0 md:left-64 right-0 h-16 bg-white/95 backdrop-blur-md z-40 flex items-center px-4 md:px-7 justify-between border-b border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      {/* Left: Mobile menu toggle + Global Search */}
-      <div className="flex items-center gap-3 flex-1 max-w-xl">
-        {onToggleMobileMenu && (
-          <button
-            onClick={onToggleMobileMenu}
-            className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <span className="material-symbols-outlined text-2xl">menu</span>
-          </button>
-        )}
+    <>
+      <header className="sticky top-0 z-30 h-16 w-full bg-white/95 backdrop-blur-md flex items-center px-4 md:px-8 justify-between border-b border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        {/* Left: Mobile menu toggle + Clean Global Search */}
+        <div className="flex items-center gap-3 flex-1 max-w-md">
+          {onToggleMobileMenu && (
+            <button
+              onClick={onToggleMobileMenu}
+              className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-2xl">menu</span>
+            </button>
+          )}
 
-        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-sm">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
-            search
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search incidents, facilities, keywords..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-full outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder:text-slate-400"
-          />
-        </form>
-
-        {/* Facility Selector */}
-        <div className="hidden lg:flex items-center">
-          <select
-            value={selectedFacility}
-            onChange={(e) => setSelectedFacility(e.target.value)}
-            className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            <option value="All Facilities">All Facilities</option>
-            <option value="North Rig">North Rig</option>
-            <option value="Processing Unit">Processing Unit</option>
-            <option value="Storage Tank">Storage Tank</option>
-            <option value="Offshore-3">Offshore-3</option>
-            <option value="Utility Block">Utility Block</option>
-            <option value="Site Alpha">Site Alpha</option>
-            <option value="Site Bravo">Site Bravo</option>
-          </select>
-        </div>
-
-        {/* Date Range Badge */}
-        <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full whitespace-nowrap">
-          <span className="material-symbols-outlined text-[15px] text-slate-400">calendar_today</span>
-          <span>Sep 1, 2025 — Sep 20, 2026</span>
-        </div>
-      </div>
-
-      {/* Right controls */}
-      <div className="flex items-center gap-2 md:gap-3">
-        {/* System Operational Badge */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>System Operational</span>
-        </div>
-
-        {/* AI Action Trigger: Discover SIF Patterns */}
-        {onDiscover && (
-          <button
-            onClick={onDiscover}
-            disabled={discovering}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[12px] font-bold rounded-lg shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-          >
-            <span className={`material-symbols-outlined text-[16px] ${discovering ? "animate-spin" : ""}`}>
-              {discovering ? "sync" : "auto_fix_high"}
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+              search
             </span>
-            <span>{discovering ? "Clustering..." : "Discover Patterns"}</span>
-          </button>
-        )}
-
-        {/* Notifications Dropdown Toggle */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors relative cursor-pointer"
-            title="Notifications"
-          >
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-4 pb-2 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Live Safety Alerts</span>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                  3 Active
-                </span>
-              </div>
-              <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div key={n.id} className="p-3 hover:bg-slate-50 transition-colors flex items-start gap-2.5">
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
-                        n.type === "critical"
-                          ? "bg-red-100 text-red-700"
-                          : n.type === "high"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[15px]">{n.icon}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold text-slate-900 leading-tight truncate">{n.title}</p>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">{n.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="px-3 pt-2 border-t border-slate-100">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setShowNotifications(false)}
-                  className="block text-center py-1 text-[11px] font-bold text-blue-600 hover:text-blue-700"
-                >
-                  View All Live Alerts →
-                </Link>
-              </div>
-            </div>
-          )}
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search precursor observations, broken barriers, facilities..."
+              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200/90 rounded-full outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-slate-800 placeholder:text-slate-400"
+            />
+          </form>
         </div>
 
-        {/* User Profile Pill Menu */}
-        <div className="relative">
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-          >
-            <div className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold">
-              {username.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-            </div>
-            <div className="hidden md:block text-left">
-              <span className="text-xs font-bold text-slate-900 block leading-tight">{username}</span>
-              <span className="text-[10px] text-slate-400 block leading-none">{role}</span>
-            </div>
-            <span className="material-symbols-outlined text-[16px] text-slate-400">expand_more</span>
-          </button>
-
-          {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-900">{username}</p>
-                <p className="text-[10px] text-slate-500">{role}</p>
-              </div>
-              <Link
-                href="/dashboard"
-                onClick={() => setShowUserMenu(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
-              >
-                <span className="material-symbols-outlined text-[16px]">person</span>
-                Profile Settings
-              </Link>
-              <Link
-                href="/login"
-                onClick={() => setShowUserMenu(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
-              >
-                <span className="material-symbols-outlined text-[16px]">logout</span>
-                Sign Out
-              </Link>
-            </div>
+        {/* Right controls: Clean bar with Discover, Bell, and Profile */}
+        <div className="flex items-center gap-3">
+          {/* Discover SIF Patterns Button */}
+          {onDiscover && (
+            <button
+              type="button"
+              onClick={onDiscover}
+              disabled={discovering}
+              className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <span className={`material-symbols-outlined text-[17px] ${discovering ? "animate-spin" : ""}`}>
+                {discovering ? "sync" : "auto_fix_high"}
+              </span>
+              <span className="hidden sm:inline">
+                {discovering ? "Clustering Patterns..." : "Discover Patterns"}
+              </span>
+            </button>
           )}
+
+          {/* Live Alerts Bell Toggle */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors relative cursor-pointer"
+              title="Live Safety Alerts"
+            >
+              <span className="material-symbols-outlined text-[20px]">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900">Live Safety Precursor Alerts</span>
+                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                    3 Active
+                  </span>
+                </div>
+                <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="p-3 hover:bg-slate-50 transition-colors flex items-start gap-2.5">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
+                          n.type === "critical"
+                            ? "bg-red-100 text-red-700"
+                            : n.type === "high"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[15px]">{n.icon}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-semibold text-slate-900 leading-tight truncate">{n.title}</p>
+                        <span className="text-[10px] text-slate-400 mt-0.5 block">{n.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-3 pt-2 border-t border-slate-100">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setShowNotifications(false)}
+                    className="block text-center py-1 text-[11px] font-bold text-blue-600 hover:text-blue-700"
+                  >
+                    View All Command Center Alerts →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Profile Menu Pill */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer"
+            >
+              <div className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                {username
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")}
+              </div>
+              <div className="text-left hidden sm:block">
+                <span className="text-xs font-bold text-slate-900 block leading-tight">{username}</span>
+                <span className="text-[10px] text-slate-400 block leading-none">{role}</span>
+              </div>
+              <span className="material-symbols-outlined text-[16px] text-slate-400">expand_more</span>
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-4 py-2.5 border-b border-slate-100">
+                  <p className="text-xs font-bold text-slate-900">{username}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">{role}</p>
+                </div>
+
+                <div className="p-1 space-y-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      setShowProfileModal(true);
+                      if (onOpenProfile) onOpenProfile();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-blue-600">manage_accounts</span>
+                    <span>Profile &amp; Settings</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      setShowProfileModal(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-amber-600">switch_account</span>
+                    <span>Switch Test Persona</span>
+                  </button>
+                </div>
+
+                <div className="p-1 pt-1.5 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-xl transition-colors text-left cursor-pointer font-semibold"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Global Profile & Settings Modal */}
+      <ProfileSettingsModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onUserChange={(newName, newRole) => {
+          setUsername(newName);
+          setRole(newRole);
+        }}
+      />
+    </>
   );
 }

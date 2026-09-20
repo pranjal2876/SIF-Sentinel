@@ -96,7 +96,7 @@ export default function DatasetUploadPage() {
       <div className="md:pl-64">
         <AppHeader />
 
-        <main className="pt-20 min-h-screen bg-[#F8FAFC] p-4 md:p-8">
+        <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
           <div className="max-w-[1300px] mx-auto space-y-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

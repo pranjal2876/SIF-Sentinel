@@ -147,7 +147,7 @@ export default function ReportDetailPage({
       <div className="md:pl-64">
         <AppHeader />
 
-        <main className="pt-20 min-h-screen bg-[#F8FAFC] p-4 md:p-8">
+        <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
           <div className="max-w-[1500px] mx-auto space-y-6">
             {/* Navigation & Breadcrumbs */}
             <div className="flex items-center justify-between">

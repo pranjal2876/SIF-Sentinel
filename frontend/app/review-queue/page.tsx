@@ -168,7 +168,7 @@ export default function ReviewQueuePage() {
       const nextStats = await api.annotationStats().catch(() => null);
       if (nextStats) setStats(nextStats);
     } catch (err: any) {
-      alert(`Annotation submission failed: ${err?.message || err}`);
+      setErrorMsg(`Annotation submission failed: ${err?.message || err}`);
     } finally {
       setSubmittingId(null);
     }
@@ -190,7 +190,7 @@ export default function ReviewQueuePage() {
       );
       fetchData();
     } catch (err: any) {
-      alert(`Retraining failed: ${err?.message || err}`);
+      setErrorMsg(`Retraining failed: ${err?.message || err}`);
     } finally {
       setRetraining(false);
     }
@@ -205,7 +205,7 @@ export default function ReviewQueuePage() {
       setTimeout(() => setToastMsg(null), 4000);
       fetchData();
     } catch (err: any) {
-      alert(`Model activation failed: ${err?.message || err}`);
+      setErrorMsg(`Model activation failed: ${err?.message || err}`);
     } finally {
       setActivatingVersion(null);
     }
@@ -213,13 +213,12 @@ export default function ReviewQueuePage() {
 
   // Filtered queue items
   const filteredQueue = queue.filter((item) => {
-    if (searchQuery) {
-      const matchText = (item.description + " " + (item.site || "") + " " + (item.extracted_category || "")).toLowerCase();
-      if (!matchText.includes(searchQuery.toLowerCase())) return false;
+    if (searchQuery.trim() && !item.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
     }
     if (riskFilter && item.risk_level !== riskFilter) return false;
-    if (facilityFilter && item.site && !item.site.toLowerCase().includes(facilityFilter.toLowerCase())) return false;
-    if (domainFilter && item.extracted_category && !item.extracted_category.toLowerCase().includes(domainFilter.toLowerCase())) return false;
+    if (facilityFilter && item.site !== facilityFilter) return false;
+    if (domainFilter && item.extracted_category !== domainFilter) return false;
     return true;
   });
 
@@ -233,7 +232,7 @@ export default function ReviewQueuePage() {
       <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         <AppHeader onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
-        <main className="pt-20 p-4 md:p-8 flex-1">
+        <main className="p-4 md:p-8 flex-1">
           <div className="max-w-[1550px] mx-auto space-y-6">
 
             {/* Header & Sub-navigation Tabs */}

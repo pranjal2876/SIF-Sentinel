@@ -65,7 +65,7 @@ export default function PatternsListPage() {
       <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         <AppHeader onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
-        <main className="pt-20 p-4 md:p-8 flex-1">
+        <main className="p-4 md:p-8 flex-1">
           <div className="max-w-[1550px] mx-auto space-y-6">
 
             {/* Header & Sub-Navigation */}
