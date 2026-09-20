@@ -176,29 +176,9 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
-                <button
-                  onClick={handleLoadPublic}
-                  disabled={loadingPublic || seeding}
-                  className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
-                  <span>{loadingPublic ? "Loading Public..." : "Load Public Data"}</span>
-                </button>
-
-                <button
-                  onClick={handleSeed}
-                  disabled={loadingPublic || seeding}
-                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-amber-400">refresh</span>
-                  <span>{seeding ? "Seeding (1k)..." : "Reload Demo (1,000)"}</span>
-                </button>
-
-                <div className="hidden xl:flex items-center gap-1.5 text-xs text-slate-500 pl-2 border-l border-slate-200">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="font-semibold text-slate-700">Real-time intelligence</span>
-                </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <span className="font-semibold text-slate-700">Real-time intelligence</span>
               </div>
             </div>
 
