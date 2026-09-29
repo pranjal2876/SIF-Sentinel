@@ -52,6 +52,32 @@ export default function DatasetUploadPage() {
 
   const currentStep = uploadResult ? 4 : uploading ? 3 : profile ? 2 : 1;
 
+  const [backendStatus, setBackendStatus] = React.useState<"checking" | "online" | "waking" | "offline">("checking");
+
+  // Ping the backend on mount so Render wakes up before the user drops a file
+  React.useEffect(() => {
+    async function pingBackend() {
+      try {
+        const { getApiUrl } = await import("@/lib/api");
+        const res = await fetch(`${getApiUrl()}/dashboard/kpis`, { method: "GET" });
+        setBackendStatus(res.ok ? "online" : "waking");
+      } catch {
+        setBackendStatus("waking");
+        // Retry once after 8 s (Render cold-start ~30-60 s)
+        setTimeout(async () => {
+          try {
+            const { getApiUrl } = await import("@/lib/api");
+            const res = await fetch(`${getApiUrl()}/dashboard/kpis`, { method: "GET" });
+            setBackendStatus(res.ok ? "online" : "offline");
+          } catch {
+            setBackendStatus("offline");
+          }
+        }, 8000);
+      }
+    }
+    pingBackend();
+  }, []);
+
   async function handleFileChange(selectedFile: File) {
     setFile(selectedFile);
     setProfile(null);
@@ -64,11 +90,19 @@ export default function DatasetUploadPage() {
       const p = await profileDatasetFile(selectedFile);
       setProfile(p);
       setMapping(p.candidate_mappings || {});
+      setBackendStatus("online");
     } catch (err: any) {
+      const raw = formatErrorMessage(err) || "";
+      const isNetwork =
+        raw.toLowerCase().includes("failed to fetch") ||
+        raw.toLowerCase().includes("networkerror") ||
+        raw.toLowerCase().includes("load failed");
       setError(
-        formatErrorMessage(err) ||
-          "Failed to profile uploaded file. Ensure it is a valid CSV, Excel, or PDF document."
+        isNetwork
+          ? "The backend is waking up from sleep (Render free-tier cold start). Please wait 30–60 seconds and try uploading again."
+          : raw || "Failed to profile uploaded file. Ensure it is a valid CSV, Excel, or PDF document."
       );
+      if (isNetwork) setBackendStatus("waking");
     } finally {
       setProfiling(false);
     }
@@ -82,8 +116,15 @@ export default function DatasetUploadPage() {
       const res = await uploadDatasetFile(file, mapping, datasetName, isSynthetic);
       setUploadResult(res);
     } catch (err: any) {
+      const raw = formatErrorMessage(err) || "";
+      const isNetwork =
+        raw.toLowerCase().includes("failed to fetch") ||
+        raw.toLowerCase().includes("networkerror") ||
+        raw.toLowerCase().includes("load failed");
       setError(
-        formatErrorMessage(err) || "Dataset ingestion and NLP processing failed."
+        isNetwork
+          ? "The backend is waking up from sleep (Render free-tier cold start). Please wait 30–60 seconds and try again."
+          : raw || "Dataset ingestion and NLP processing failed."
       );
     } finally {
       setUploading(false);
@@ -176,6 +217,32 @@ export default function DatasetUploadPage() {
                 })}
               </div>
             </div>
+
+            {/* Backend Status Banner */}
+            {backendStatus === "waking" && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                <span className="material-symbols-outlined text-[18px] text-amber-600 animate-spin">refresh</span>
+                <div>
+                  <span className="font-bold">Backend waking up…</span>
+                  <span className="ml-1 text-amber-700">Render free-tier sleeps after inactivity. This takes 30–60 seconds — the page will be ready shortly.</span>
+                </div>
+              </div>
+            )}
+            {backendStatus === "offline" && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
+                <span className="material-symbols-outlined text-[18px] text-red-600">cloud_off</span>
+                <div>
+                  <span className="font-bold">Backend unreachable.</span>
+                  <span className="ml-1">Please check that the Render service is running or start the backend locally on port 8000.</span>
+                </div>
+              </div>
+            )}
+            {backendStatus === "online" && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 w-fit">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-semibold">Backend online — ready to ingest</span>
+              </div>
+            )}
 
             {/* STEP 1: Upload Dropzone */}
             {!profile && !uploadResult && (
